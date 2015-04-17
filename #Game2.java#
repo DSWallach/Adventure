@@ -7,11 +7,73 @@ import javalib.funworld.*;
 import javalib.colors.*;
 import javalib.worldimages.*;
 import java.io.*;
-
-class Weapon{
+class Enemy{
+  
   Posn center;
   String type;
   String facing;
+  int health;
+  
+  Enemy(Posn center, String type, String facing, int health){
+    this.center = center;
+    this.type = type;
+    this.facing = facing;
+    this.health = health;
+  }
+  public FromFileImage enemyDraw(){
+    if (this.facing.equals("right")){
+      if (this.shooting==1){
+	if (this.running==1){
+	  return new FromFileImage (this.center,"Shooting1.PNG");
+	} else if (this.running==2 || this.running==4){
+	  return new FromFileImage (this.center,"Shooting2.PNG");
+	} else if (this.running==3){
+	  return new FromFileImage (this.center,"Shooting3.PNG");
+	} else {
+	  return new FromFileImage (this.center,"Shooting.PNG");
+	}
+      } else {
+	if (this.running==1){
+	  return new FromFileImage (this.center,"Running1.PNG");
+	} else if (this.running==2 || this.running==4){
+	  return new FromFileImage (this.center,"Running2.PNG");
+	} else if (this.running==3){
+	  return new FromFileImage (this.center,"Running3.PNG");
+	} else {
+	  return new FromFileImage (this.center,"Standing.PNG");
+	}
+      }
+    } else {
+      if (this.shooting==1){
+	if (this.running==1){
+	  return new FromFileImage (this.center,"LShooting1.PNG");
+	} else if (this.running==2 || this.running==4){
+	  return new FromFileImage (this.center,"LShooting2.PNG");
+	} else if (this.running==3){
+	  return new FromFileImage (this.center,"LShooting3.PNG");
+	} else {
+	  return new FromFileImage (this.center,"LShooting.PNG");
+	}
+      } else {
+	if (this.running==1){
+	  return new FromFileImage (this.center,"LRunning1.PNG");
+	} else if (this.running==2 || this.running==4){
+	  return new FromFileImage (this.center,"LRunning2.PNG");
+	} else if (this.running==3){
+	  return new FromFileImage (this.center,"LRunning3.PNG");
+	} else {
+	  return new FromFileImage (this.center,"LStanding.PNG");
+	}
+      }
+    }
+  }
+}
+class Weapon{
+  
+  Posn center;
+  String type;
+  String facing;
+  
   Weapon(Posn center, String type,String facing){
     this.center = center;
     this.type = type;
@@ -194,11 +256,11 @@ class Game2 extends World {
     } else if (ke.equals("s")){
       if (this.player.facing.equals("right")){
 	return new Game2 (this.player.movePlayer(ke),
-			  new Weapon(new Posn(this.player.center.x+4,this.player.center.y+7),
+			  new Weapon(new Posn(this.player.center.x+5,this.player.center.y+7),
 				     "Buster","right"));
       } else {
 	return new Game2 (this.player.movePlayer(ke),
-			  new Weapon(new Posn(this.player.center.x-4,this.player.center.y+7),
+			  new Weapon(new Posn(this.player.center.x-5,this.player.center.y+7),
 				     "Buster","left"));
       }
     } else {
