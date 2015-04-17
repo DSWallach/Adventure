@@ -1,0 +1,30 @@
+;; -*- mode: emacs-lisp; coding: emacs-mule; -*-
+;; --------------------------------------------------------------------------
+;; Desktop File for Emacs
+;; --------------------------------------------------------------------------
+;; Created Fri Feb 27 16:05:06 2015
+;; Desktop file format version 206
+;; Emacs version 24.4.1
+
+;; Global section:
+(setq desktop-saved-frameset [frameset 1 (21744 56322 499000 0) (desktop . "206") "David Wallach@SELWYN" nil nil ((((font-backend uniscribe gdi) (font . "-outline-Courier New-normal-normal-normal-mono-13-*-*-*-c-*-iso8859-1") (border-width . 2) (internal-border-width . 0) (right-divider-width . 0) (bottom-divider-width . 0) (vertical-scroll-bars . right) (foreground-color . "SystemWindowText") (background-color . "SystemWindow") (mouse-color . "black") (border-color . "black") (screen-gamma) (line-spacing) (left-fringe . 8) (right-fringe . 8) (alpha) (menu-bar-lines . 1) (tool-bar-lines . 3) (title) (fullscreen) (icon-type) (auto-raise) (auto-lower) (cursor-type . box) (scroll-bar-width . 17) (horizontal-scroll-bars . t) (display-type . color) (background-mode . light) (cursor-color . "black") (environment) (frameset--id . "316F-EFA2-F5DA-2FB3") (frameset--mini t . t) (height . 61) (width . 113) (modeline . t) (minibuffer . t) (unsplittable) (left . 7) (top . 5) (icon-name) (visibility . t) (display . "w32") (explicit-name) (tool-bar-position . top)) ((min-height . 4) (min-width . 10) (min-height-ignore . 2) (min-width-ignore . 7) (min-height-safe . 1) (min-width-safe . 2) (min-pixel-height . 64) (min-pixel-width . 80) (min-pixel-height-ignore . 32) (min-pixel-width-ignore . 56) (min-pixel-height-safe . 16) (min-pixel-width-safe . 16)) leaf (pixel-width . 937) (pixel-height . 912) (total-width . 117) (total-height . 57) (normal-height . 1.0) (normal-width . 1.0) (buffer "World.java" (selected . t) (hscroll . 0) (fringes 8 8 nil) (margins 3) (scroll-bars 17 3 t nil) (vscroll . 0) (dedicated) (point . 1376) (start . 1))))])
+(setq desktop-missing-file-warning nil)
+(setq tags-file-name nil)
+(setq tags-table-list nil)
+(setq search-ring nil)
+(setq regexp-search-ring nil)
+(setq register-alist nil)
+(setq file-name-history '("c:/Users/David Wallach/Dropbox/Vassar/2015 Spring/CMPU 203/GitHub/MovingBlocks/javalib/funworld/"))
+
+;; Buffer section -- buffers listed in same order as in buffer list:
+(desktop-create-buffer 206
+  "c:/Users/David Wallach/Dropbox/Vassar/2015 Spring/CMPU 203/GitHub/MovingBlocks/javalib/funworld/World.java"
+  "World.java"
+  'java-mode
+  '(abbrev-mode linum-mode)
+  1376
+  '(5147 nil)
+  nil
+  nil
+  '((buffer-file-coding-system . undecided-unix)))
+
