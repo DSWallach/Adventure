@@ -10,17 +10,29 @@ import javalib.worldimages.*;
 import java.io.*;
 interface LoE{
   public boolean enemyHere();
+  public int num();
   public Enemy getEnemy();
+  public Posn enemyLoc();
   public LoE getNext();
+  public LoE setFirst(Enemy enemy);
   public LoE setEnemy(Enemy enemy);
   public LoE setNext(LoE next);
+  public LoE damage(Enemy enemy);
   public WorldImage listDraw(WorldImage base);
 }
 
 class noEnemy implements LoE{
+  
   noEnemy(){}
+  
   public boolean enemyHere(){
     return false;
+  }
+  public int num(){
+    return 0;
+  }
+  public Posn enemyLoc(){
+    return new Posn(-1,-1);
   }
   public Enemy getEnemy(){
     return null;
@@ -28,11 +40,17 @@ class noEnemy implements LoE{
   public LoE getNext(){
     return null;
   }
+  public LoE setFirst(Enemy enemy){
+    return new EnemyNode (enemy, new noEnemy());
+  }
   public LoE setEnemy(Enemy enemy){
-    return new EnemyNode(enemy, new noEnemy());
+    return new EnemyNode (enemy, new noEnemy());
   }
   public LoE setNext(LoE next){
     return next;
+  }
+  public LoE damage(Enemy enemy){
+    return this;
   }
   public WorldImage listDraw(WorldImage base){
     return base;
@@ -49,11 +67,24 @@ class EnemyNode implements LoE{
   public boolean enemyHere(){
     return true;
   }
+  public int num(){
+    return 1 + this.n.num();
+  }
+  public Posn enemyLoc(){
+    return new Posn (this.e.center.x, this.e.center.y);
+  }
   public Enemy getEnemy(){
     return e;
   }
   public LoE getNext(){
+    if (n.enemyHere()){
     return n;
+    } else {
+      return new noEnemy();
+    }
+  }
+  public LoE setFirst(Enemy enemy){
+    return new EnemyNode(enemy, this);
   }
   public LoE setEnemy(Enemy enemy){
     return new EnemyNode(enemy, this.n);
@@ -61,9 +92,24 @@ class EnemyNode implements LoE{
   public LoE setNext(LoE next){
     return new EnemyNode(this.e, next);
   }
+  public LoE damage(Enemy enemy){
+    if(this.e==enemy){
+      if (this.e.health > 1){
+      return this.setEnemy (new Enemy(this.e.center,
+				      this.e.type,
+				      this.e.facing,
+				      this.e.shooting,
+				      this.e.health-1));
+      } else {
+	return n;
+      }
+    } else {
+      return new EnemyNode (this.e, this.n.damage(enemy));
+    }
+  }			 
   public WorldImage listDraw(WorldImage base){
     WorldImage Image = new OverlayImages(base, this.getEnemy().enemyDraw());
-      return this.n.listDraw(Image);
+    return this.n.listDraw(Image);
   }
 }      
 class Enemy {
@@ -135,21 +181,23 @@ class EWeapon{
   public EWeapon moveEWeapon(){
     if (this.facing.equals("right")){
       return new EWeapon(new Posn(this.center.x + 10,this.center.y),
-			this.type,this.facing);
+			 this.type,this.facing);
     } else {
       return new EWeapon(new Posn(this.center.x - 10,this.center.y),
-			this.type,this.facing);
+			 this.type,this.facing);
     }
   }
 }
 interface LoW{
   public boolean weaponHere();
-  public Posn weaponHere(int x, int y);
+  public int num();
+  public Posn weaponLoc();
   public Weapon getWeapon();
   public LoW move();
   public LoW getNext();
   public LoW setWeapon(Weapon w);
   public LoW setNext(LoW n);
+  public LoW remove(Weapon w);
   public WorldImage listDraw(WorldImage base);
 }
 
@@ -158,8 +206,11 @@ class noWeapon implements LoW{
   public boolean weaponHere(){
     return false;
   }
-  public Posn weaponHere(int x, int y){
-    return new Posn(0,0);
+  public int num(){
+    return 0;
+  }
+  public Posn weaponLoc(){
+    return new Posn(-1,-1);
   }
   public Weapon getWeapon(){
     return null;
@@ -176,6 +227,9 @@ class noWeapon implements LoW{
   public LoW setNext(LoW n){
     return n;
   }
+  public LoW remove(Weapon w){
+    return this;
+  }
   public WorldImage listDraw(WorldImage base){
     return base;
   }
@@ -191,8 +245,11 @@ class WeaponNode implements LoW{
   public boolean weaponHere(){
     return true;
   }
-  public Posn weaponHere(int x, int y){
-    return new Posn (Math.abs(this.w.center.x-x), Math.abs(this.w.center.y-y));
+  public int num(){
+    return 1 + this.n.num();
+  }		   
+  public Posn weaponLoc(){
+    return new Posn (this.w.center.x,this.w.center.y);
   }
   public Weapon getWeapon(){
     return w;
@@ -216,6 +273,13 @@ class WeaponNode implements LoW{
   }
   public LoW setNext(LoW n){
     return new WeaponNode(this.w, n);
+  }
+  public LoW remove(Weapon w){
+    if(this.w==w){
+      return this.getNext();
+    } else {
+      return this.getNext().remove(w);
+    }
   }
   public WorldImage listDraw(WorldImage base){
     WorldImage Image = new OverlayImages(base, this.getWeapon().weaponDraw());
@@ -257,13 +321,15 @@ class Player {
   int running;
   int shooting;
   int jumping;
+  int health;
 
-  Player(Posn center, String facing, int running, int shooting, int jumping){
+  Player(Posn center, String facing, int running, int shooting, int jumping, int health){
     this.center = center;
     this.facing = facing;
     this.running = running;
     this.shooting = shooting;
     this.jumping = jumping;
+    this.health = health;
   }
   
   // Generates an image of the player's character
@@ -332,19 +398,21 @@ class Player {
   }
   public Player jump(){
     if (this.facing.equals("right")){
-	return new Player (new Posn(this.center.x+6,
-				    this.center.y-10),
-			   this.facing,
-			   this.running,
-			   this.shooting,
-			   this.jumping-1);
+      return new Player (new Posn(this.center.x+6,
+				  this.center.y-10),
+			 this.facing,
+			 this.running,
+			 this.shooting,
+			 this.jumping-1,
+			 this.health);
     } else {
-	return new Player (new Posn(this.center.x-6,
-				    this.center.y-10),
-			   this.facing,
-			   this.running,
-			   this.shooting,
-			   this.jumping-1);
+      return new Player (new Posn(this.center.x-6,
+				  this.center.y-10),
+			 this.facing,
+			 this.running,
+			 this.shooting,
+			 this.jumping-1,
+			 this.health);
     }
   }
   // Moves the player's based which arrow key is pressed
@@ -357,30 +425,35 @@ class Player {
 			"right",
 			this.running+1,
 		        0,
-			this.jumping);
+			this.jumping,
+			this.health);
     } else if (ke.equals("left") && this.jumping==0){
       return new Player(new Posn(this.center.x - 10, this.center.y),
 			"left",
 			this.running+1,
 			0,
-			this.jumping);
+			this.jumping,
+			this.health);
     } else if (ke.equals("up") && this.jumping==0){
       return new Player(this.center,
 			this.facing,
 			this.running,
 			this.shooting,
-			10);
+			10,
+			this.health);
     } else if (ke.equals("s")){
       return new Player(new Posn(this.center.x, this.center.y),
 			this.facing,
 			this.running,
 			1,
-			this.jumping);
+			this.jumping,
+			this.health);
     } else {
       return new Player(this.center,
 			this.facing,0,
 			0,
-			this.jumping);
+			this.jumping,
+			this.health);
     }
   }
   public Player shoot(String ke){
@@ -389,7 +462,8 @@ class Player {
 			this.facing,
 			this.running,
 			1,
-			this.jumping);
+			this.jumping,
+			this.health);
     } else {
       return this;
     }
@@ -397,6 +471,7 @@ class Player {
 }
 interface PlatformNode{
   public boolean platformHere();
+  public int num();
   public int platformHere(int h);
   public Platform getPlatform();
   public PlatformNode getNext();
@@ -406,6 +481,9 @@ class noPlatform implements PlatformNode{
   noPlatform(){}
   public boolean platformHere(){
     return false;
+  }
+  public int num(){
+    return 0;
   }
   public int platformHere(int h){
     return 0;
@@ -427,6 +505,9 @@ class LoP implements PlatformNode{
   }
   public boolean platformHere(){
     return true;
+  }
+  public int num(){
+    return 1 + this.n.num();
   }
   public int platformHere(int x){
     if (this.p.width.x < x && x < this.p.width.y){
@@ -484,23 +565,25 @@ class Game2 extends World {
   }
  
   
-// Controls what happens in the game when a key is pressed
-public World onKeyEvent(String ke){
+  // Controls what happens in the game when a key is pressed
+  public World onKeyEvent(String ke){
     // If the key "x" is pressed the game world ends
     if (ke.equals("x")){
-      return this.endOfWorld("Aidos");
+      return this.hit();
     } else if (ke.equals("s")){
       if (this.player.facing.equals("right")){
 	return new Game2 (this.player.move(ke),
-			  new WeaponNode(new Weapon(new Posn(this.player.center.x+5,this.player.center.y+7),
-							     "Buster","right"), this.low),
+			  new WeaponNode(new Weapon(new Posn(this.player.center.x+5,
+							     this.player.center.y+7),
+						    "Buster","right"), this.low),
 			  this.loe,
 			  this.eweapon0,
 			  this.lop).gravity();
       } else {
 	return new Game2 (this.player.move(ke),
-			  new WeaponNode(new Weapon(new Posn(this.player.center.x-5,this.player.center.y+7),
-							     "Buster","left"), this.low),
+			  new WeaponNode(new Weapon(new Posn(this.player.center.x-5,
+							     this.player.center.y+7),
+						    "Buster","left"), this.low),
 			  this.loe,
 			  this.eweapon0,
 			  this.lop).gravity();
@@ -520,21 +603,23 @@ public World onKeyEvent(String ke){
 				   this.player.facing,
 				   this.player.running,
 				   this.player.shooting,
-				   this.player.jumping),
+				   this.player.jumping,
+				   this.player.health),
 		       this.low.move(),
 		       this.loe,
 		       this.eweapon0.moveEWeapon(),
-		       this.lop).gravity();
+		       this.lop).gravity().hit();
     } else {
       return new Game2(new Player (this.player.center,
 				   this.player.facing,
 				   this.player.running,
 				   this.player.shooting,
-				   this.player.jumping).jump(),
+				   this.player.jumping,
+				   this.player.health).jump(),
 		       this.low.move(),
 		       this.loe,
 		       this.eweapon0.moveEWeapon(),
-		       this.lop);
+		       this.lop).hit();
     }
   }
   // Overlays the images of each of the game objects 
@@ -548,7 +633,8 @@ public World onKeyEvent(String ke){
 			     this.player.draw()),
 			 this.low.listDraw(blank)),
 		     this.eweapon0.eWeaponDraw()),
-		new TextImage(new Posn(300, 20), "Player center y is  " + this.player.center.y,Color.red)); 
+		new TextImage(new Posn(300, 20), "Player health " +
+			      this.player.health,Color.red)); 
   }
   // Determines under what conditions the game world ends
   public WorldEnd worldEnds(){
@@ -566,7 +652,8 @@ public World onKeyEvent(String ke){
 				    this.player.facing,
 				    this.player.running,
 				    this.player.shooting,
-				    this.player.jumping),
+				    this.player.jumping,
+				    this.player.health),
 			 this.low,
 			 this.loe,
 			 this.eweapon0,
@@ -576,100 +663,134 @@ public World onKeyEvent(String ke){
       }
     } else {
       return new Game2(new Player(new Posn (this.player.center.x,this.player.center.y+10),
-				    this.player.facing,
-				    this.player.running,
-				    this.player.shooting,
-				    this.player.jumping),
-			 this.low,
-			 this.loe,
-			 this.eweapon0,
-			 this.lop);
+				  this.player.facing,
+				  this.player.running,
+				  this.player.shooting,
+				  this.player.jumping,
+				  this.player.health),
+		       this.low,
+		       this.loe,
+		       this.eweapon0,
+		       this.lop);
     }
   }
-  /*  public Game2 damage(){
-    if (new Posn(0,0)==this.low.weaponHere(this.LoE.getEnemy().center.x,
-					     this.LoE.getEnemy().center.y)){
-      if (this.LoE.getNext().enemyHere()){
-	new Game2 (this.player,
-		   
+  public Game2 hit(){
+    Posn hit = new Posn (100, 100);
+    LoE currEnemy = this.loe;
+    LoW currWeapon = this.low;
+    Posn wLoc = currWeapon.weaponLoc();
+    Posn eLoc = currEnemy.enemyLoc();
+    for (int i=0;i<this.loe.num();i++){
+      currWeapon = this.low;
+      wLoc = currWeapon.weaponLoc();
+      for (int j=0;j<this.low.num();j++){
+	//System.out.println("weapon loop");
+	hit = new Posn(Math.abs(wLoc.x-eLoc.x),
+		       Math.abs(wLoc.y-eLoc.y));
+	if (hit.x < 20 && hit.y < 20){
+	  System.out.println("Enemy hit");
+	  return new Game2(this.player,
+			   this.low.remove(currWeapon.getWeapon()),
+			   this.loe.damage(currEnemy.getEnemy()),
+			   this.eweapon0,
+			   this.lop);
+	} else {
+	  currWeapon = currWeapon.getNext();
+	}
+      }
+      //System.out.println("enemy loop");
+      currEnemy = currEnemy.getNext();
+      eLoc = currEnemy.enemyLoc();
     }
-
-    }*/
+    return this;
+  }
   // Defines the initial setup of the game world and begins the game
   public static void main(String args[]){
     LoP Stage1Platforms =
-      new LoP(new Platform(147,new Posn(0,86)),
-				  new LoP(new Platform(179,
-						       new Posn(86, 151)),
-					  new LoP(new Platform(210,
-							       new Posn(151,313)),
-						  new LoP(new Platform(226,
-								       new Posn(313,379)),
-							  new LoP(new Platform(210,
-									       new Posn (379, 541)),
-								  new LoP (new Platform (210,
-											 new Posn(574, 700)),
-									   new noPlatform()))))));
+      new LoP(new Platform(147,
+			   new Posn(0,86)),
+	      new LoP(new Platform(179,
+				   new Posn(86, 151)),
+		      new LoP(new Platform(210,
+					   new Posn(151,313)),
+			      new LoP(new Platform(226,
+						   new Posn(313,379)),
+				      new LoP(new Platform(210,
+							   new Posn (379, 541)),
+					      new LoP (new Platform (210,
+								     new Posn(574, 700)),
+						       new noPlatform()))))));
 
-
-
-    Game2 Stage1 = new Game2(new Player (new Posn (50,100),"right",0,0,0),
+    Game2 Stage1 = new Game2(new Player (new Posn (50,100),"right",0,0,0,10),
+			     new WeaponNode(new Weapon(new Posn(100,100),
+						       "buster","right"),
+					    new noWeapon()),
+			     new EnemyNode(new Enemy (new Posn (300,190),
+						      "left","ET",0,2),
+					   new EnemyNode(new Enemy (new Posn (100, 159),
+								    "left","ET",0,2),
+							 new noEnemy())),
+			     new EWeapon(new Posn (100,100),
+					 "null","left"),
+			     Stage1Platforms);
+    Game2 Stage2 = new Game2(new Player (new Posn (50,100),"right",0,0,0,10),
 			     new WeaponNode(new Weapon(new Posn(100,100),
 						       "buster","right"),
 					    new noWeapon()),
 			     new EnemyNode(new Enemy (new Posn (300,200),
 						      "left","ET",0,0),
-				     new EnemyNode(new Enemy (new Posn (500, 200),
-							      "left","ET",0,0),
-						   new noEnemy())),
+					   new EnemyNode(new Enemy (new Posn (500, 200),
+								    "left","ET",0,0),
+							 new noEnemy())),
 			     new EWeapon(new Posn (100,100),
 					 "null","left"),
 			     Stage1Platforms);
+    
     Stage1.bigBang(widthStage1, heightStage1, 0.1);
   }
 }
 /*
-class Adventure{
+  class Adventure{
   public Game2 EnemyAI(Game2 g){
-    if (g.player.center.x<g.enemy.cetner.x){
-      return new Game2(g.player,
-		       g.weapon,
-		       new Enemy(g.enemry.center,
-				 "left",
-				 g.enemy.type,
-				 g.enemy.shooting,
-				 s.enemy.health),
-		       g.eweapon);
+  if (g.player.center.x<g.enemy.cetner.x){
+  return new Game2(g.player,
+  g.weapon,
+  new Enemy(g.enemry.center,
+  "left",
+  g.enemy.type,
+  g.enemy.shooting,
+  s.enemy.health),
+  g.eweapon);
 		       
-    }
- public Enemy AI(Player p, Enemy e){
-    if (this.enemy.shooting<=0 &&
-	(Math.abs(this.enemy.center.y - this.player.center.y)<10) &&
-	(Math.abs(this.enemy.center.x - this.player.center.x)<100)){
-      return new Enemy (this.enemy.center,
-			this.enemy.facing,
-			this.enemy.type,
-			10,
-			this.enemy.health);
-    } else {
-      return new Enemy (this.enemy.center,
-			this.enemy.facing,
-			this.enemy.type,
-			10,
-			this.enemy.health);
-    }
+  }
+  public Enemy AI(Player p, Enemy e){
+  if (this.enemy.shooting<=0 &&
+  (Math.abs(this.enemy.center.y - this.player.center.y)<10) &&
+  (Math.abs(this.enemy.center.x - this.player.center.x)<100)){
+  return new Enemy (this.enemy.center,
+  this.enemy.facing,
+  this.enemy.type,
+  10,
+  this.enemy.health);
+  } else {
+  return new Enemy (this.enemy.center,
+  this.enemy.facing,
+  this.enemy.type,
+  10,
+  this.enemy.health);
+  }
   }
 
 
     
   }
- public static void main(String args[]){
+  public static void main(String args[]){
 
-    Game2 Stage1 = new Game2(new Player (new Posn (50,200),"right",0,0,0),
-			     new Weapon(new Posn (100,100),"null","right"),
-			     new Enemy (new Posn (800,200),"left","ET",0,0),
-			     new EWeapon(new Posn (100,100),"null","left"));
-    Stage1.bigBang(widthStage1, heightStage1, 0.1);
+  Game2 Stage1 = new Game2(new Player (new Posn (50,200),"right",0,0,0),
+  new Weapon(new Posn (100,100),"null","right"),
+  new Enemy (new Posn (800,200),"left","ET",0,0),
+  new EWeapon(new Posn (100,100),"null","left"));
+  Stage1.bigBang(widthStage1, heightStage1, 0.1);
   }
-}
+  }
 */
