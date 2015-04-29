@@ -9,6 +9,37 @@ import javalib.colors.*;
 import javalib.worldimages.*;
 import java.io.*;
 
+class Background{
+
+  String stage;
+  
+  Background(String stage){
+    this.stage = stage;
+  }
+  
+  public FromFileImage draw(){
+    
+    FromFileImage Stage1Image = new FromFileImage (new Posn(350,125), "Stage1.PNG");
+    FromFileImage Stage2Image = new FromFileImage (new Posn(350,125), "Stage2.PNG");
+    FromFileImage StageRImage = new FromFileImage (new Posn(350,125), "StageR.PNG");
+    
+    if (this.stage.equals("Stage1")){
+      return Stage1Image;
+    } else if (this.stage.equals("Stage2")){
+      return Stage2Image;
+    } else if (this.stage.equals("StageR")){
+      return StageRImage;
+    } else if (this.stage.equals("Stage3")){
+      return Stage1Image;
+    } else if (this.stage.equals("Stage4")){
+      return Stage1Image;
+    } else {
+      return StageRImage;
+    }
+  }
+}
+    
+
 interface LoE{
   public boolean enemyHere();
   public int num();
@@ -97,11 +128,11 @@ class EnemyNode implements LoE{
   public LoE damage(Enemy enemy){
     if(this.e==enemy){
       if (this.e.health > 1){
-      return this.setEnemy (new Enemy(this.e.center,
-				      this.e.type,
-				      this.e.facing,
-				      this.e.shooting,
-				      this.e.health-1));
+	return this.setEnemy (new Enemy(this.e.center,
+					this.e.type,
+					this.e.facing,
+					this.e.shooting,
+					this.e.health-1));
       } else {
 	return n;
       }
@@ -141,10 +172,10 @@ class EnemyNode implements LoE{
       }
     } else {
       return new EnemyNode(new Enemy(this.e.center,
-					 this.e.type,
-					 this.e.facing,
-					 this.e.shooting-1,
-					 this.e.health), this.n.attack(enemy, dir));
+				     this.e.type,
+				     this.e.facing,
+				     this.e.shooting-1,
+				     this.e.health), this.n.attack(enemy, dir));
     }
   }
   public WorldImage listDraw(WorldImage base){
@@ -210,13 +241,13 @@ class noWeapon implements LoW{
     return new Posn(-1,-1);
   }
   public Weapon getWeapon(){
-    return null;
+    return null; //throw RuntimeException("No Weapon Here!");
   }
   public LoW move(){
-    return null;
+    return this;
   }
   public LoW getNext(){
-    return null;
+    return this;
   }
   public LoW setWeapon(Weapon w){
     return new WeaponNode(w, new noWeapon());
@@ -232,17 +263,17 @@ class noWeapon implements LoW{
   }
   public LoW eShoot(Posn e, String dir, String type){
     if (dir=="right"){
-    return new WeaponNode (new Weapon (false,
-				       new Posn (e.x+5,
-						 e.y+7),
-				       type,
-				       dir), this);
+      return new WeaponNode (new Weapon (false,
+					 new Posn (e.x+5,
+						   e.y+7),
+					 type,
+					 dir), this);
     } else {
-    return new WeaponNode (new Weapon (false,
-				       new Posn (e.x-5,
-						 e.y+7),
-				       type,
-				       dir), this);
+      return new WeaponNode (new Weapon (false,
+					 new Posn (e.x-5,
+						   e.y+7),
+					 type,
+					 dir), this);
     }
   }
   public WorldImage listDraw(WorldImage base){
@@ -270,15 +301,7 @@ class WeaponNode implements LoW{
     return w;
   }
   public LoW move(){
-    if (this.weaponHere()){
-      if (this.n.weaponHere()){
-	return new WeaponNode (this.w.moveWeapon(), this.n.move());
-      } else {
-	return new WeaponNode (this.w.moveWeapon(), new noWeapon());
-      }
-    } else {
-      return this;
-    }
+    return new WeaponNode (this.w.moveWeapon(), this.n.move());
   }
   public LoW getNext(){
     return n;
@@ -304,18 +327,18 @@ class WeaponNode implements LoW{
     }
   }
   public LoW eShoot (Posn e, String dir, String type){
-     if (dir=="right"){
-    return new WeaponNode (new Weapon (false,
-				       new Posn (e.x+5,
-						 e.y+7),
-				       type,
-				       dir), this);
+    if (dir=="right"){
+      return new WeaponNode (new Weapon (false,
+					 new Posn (e.x+5,
+						   e.y+7),
+					 type,
+					 dir), this);
     } else {
-    return new WeaponNode (new Weapon (false,
-				       new Posn (e.x-5,
-						 e.y+7),
-				       type,
-				       dir), this);
+      return new WeaponNode (new Weapon (false,
+					 new Posn (e.x-5,
+						   e.y+7),
+					 type,
+					 dir), this);
     }
   }
   public WorldImage listDraw(WorldImage base){
@@ -582,27 +605,47 @@ class Platform {
   }
 }
 class Game2 extends World {
+  
+  static int width = 700;
+  static int height = 250;
+  static LoP Stage1Platforms =
+    new LoP(new Platform(147,
+			 new Posn(0,86)),
+	    new LoP(new Platform(179,
+				 new Posn(86, 151)),
+		    new LoP(new Platform(210,
+					 new Posn(151,313)),
+			    new LoP(new Platform(226,
+						 new Posn(313,379)),
+				    new LoP(new Platform(210,
+							 new Posn (379, 541)),
+					    new LoP (new Platform (210,
+								   new Posn(574, 700)),
+						     new noPlatform()))))));
+  int count = 0;
 
-  Posn param;  
+  String stage;  
   Player player;
   LoW low;
   LoE loe;
   LoP lop;
+  Background back;
 
   FromFileImage blank  = new FromFileImage (new Posn(0,0), "blank.png");
-  FromFileImage Stage1Image = new FromFileImage (new Posn(350,125),"Stage1.PNG");
  
-  public Game2 (Posn param,
+  public Game2 (String Stage,
 		Player player,
 		LoW low,
 		LoE loe,
-		LoP lop){
+		LoP lop,
+		Background back){
     
-    this.param = param;
+    this.stage = stage;
     this.player = player;
     this.low = low;
     this.loe = loe;
     this.lop = lop;
+    this.back = back;
     
   }
  
@@ -614,69 +657,109 @@ class Game2 extends World {
       return this;
     } else if (ke.equals("s")){
       if (this.player.facing.equals("right")){
-	return new Game2 (this.param,
+	return new Game2 (this.stage,
 			  this.player.move(ke),
 			  new WeaponNode(new Weapon(true,
 						    new Posn(this.player.center.x+5,
 							     this.player.center.y+7),
 						    "Buster","right"), this.low),
 			  this.loe,
-			  this.lop).gravity();
+			  this.lop,
+			  this.back).gravity().hit();
       } else {
-	return new Game2 (this.param,
+	return new Game2 (this.stage,
 			  this.player.move(ke),
 			  new WeaponNode(new Weapon(true,
 						    new Posn(this.player.center.x-5,
 							     this.player.center.y+7),
 						    "Buster","left"), this.low),
 			  this.loe,
-			  this.lop).gravity();
+			  this.lop,
+			  this.back).gravity().hit();
       }
     } else {
-      return new Game2 (this.param,
+      return new Game2 (this.stage,
 			this.player.move(ke),
 			this.low.move(),
 			this.loe,
-			this.lop).gravity();
+			this.lop,
+			this.back).gravity().hit();
     } 
   }
   // Controls what happens on each tick of the game world
   public World onTick(){
-    if (this.low.num()>100){
-      return new Game2(this.param,
-		       this.player,
-		       this.low,
-		       this.loe,
-		       this.lop).LoWClean().hit().AI();
-    } else if (this.player.jumping==0){
-      return new Game2(this.param,
-		       this.player,
-		       this.low.move(),
-		       this.loe,
-		       this.lop).gravity().hit().AI();
+    if (this.player.center.x>650 && count==0){
+      count++;
+      return new Game2("Stage2",
+		       new Player (new Posn (50,100),"right",0,0,0,10),
+		       new WeaponNode(new Weapon(true,
+						 new Posn(100,100),
+						 "buster","right"),
+				      new noWeapon()),
+		       new EnemyNode(new Enemy (new Posn (300,200),
+						"left","ET",0,2),
+				     new EnemyNode(new Enemy (new Posn (500, 200),
+							      "left","ET",0,2),
+						   new noEnemy())),
+		       Stage1Platforms,
+		       new Background("Stage2"));
+    } else if (this.player.center.x>650 && count==1){
+      count++;
+      return new Game2("StageR",
+		       new Player (new Posn (50,100),"right",0,0,0,10),
+		       new WeaponNode(new Weapon(true,
+						 new Posn(100,100),
+						 "buster","right"),
+				      new noWeapon()),
+		       new EnemyNode(new Enemy (new Posn (300,200),
+						"left","ET",0,2),
+				     new EnemyNode(new Enemy (new Posn (500, 200),
+							      "left","ET",0,2),
+						   new noEnemy())),
+		       Stage1Platforms,
+		       new Background("StageR"));
     } else {
-      return new Game2(this.param,
-		       this.player.jump(),
-		       this.low.move(),
-		       this.loe,
-		       this.lop).hit().AI();
+      if (this.low.num()>100){
+	return new Game2(this.stage,
+			 this.player,
+			 this.low,
+			 this.loe,
+			 this.lop,
+			 this.back).LoWClean().hit().AI();
+      } else if (this.player.jumping==0){
+	return new Game2(this.stage,
+			 this.player,
+			 this.low.move(),
+			 this.loe,
+			 this.lop,
+			 this.back).gravity().hit().AI();
+      } else {
+	return new Game2(this.stage,
+			 this.player.jump(),
+			 this.low.move(),
+			 this.loe,
+			 this.lop,
+			 this.back).hit().AI();
+      }
     }
   }
   // Overlays the images of each of the game objects 
   public WorldImage makeImage(){
     return  new OverlayImages(
-		     new OverlayImages(
-			 new OverlayImages(
-			     new OverlayImages(this.Stage1Image,
-				 this.loe.listDraw(blank)),
-			     this.player.draw()),
-			 this.low.listDraw(blank)),
-		new TextImage(new Posn(300, 20), "Player health " +
-			      this.player.health,Color.red)); 
+			      new OverlayImages(
+						new OverlayImages(
+								  new OverlayImages(
+										    new OverlayImages(blank,
+												      this.back.draw()),
+										    this.loe.listDraw(blank)),
+								  this.player.draw()),
+						this.low.listDraw(blank)),
+			      new TextImage(new Posn(300, 20), "Player health " +
+					    this.player.health,Color.red));
   }
   // Determines under what conditions the game world ends
   public WorldEnd worldEnds(){
-    if (this.player.center.y>this.param.y){
+    if (this.player.center.y>height){
       return new WorldEnd(true,this.makeImage());
     } else if (this.player.health==0){
       return new WorldEnd(true,this.makeImage());
@@ -688,7 +771,7 @@ class Game2 extends World {
   public Game2 gravity(){
     if (!(0==this.lop.platformHere(this.player.center.x))){
       if (this.player.center.y < this.lop.platformHere(this.player.center.x)-20){
-	return new Game2(this.param,
+	return new Game2(this.stage,
 			 new Player(new Posn (this.player.center.x,this.player.center.y+10),
 				    this.player.facing,
 				    this.player.running,
@@ -697,12 +780,13 @@ class Game2 extends World {
 				    this.player.health),
 			 this.low,
 			 this.loe,
-			 this.lop);
+			 this.lop,
+			 this.back);
       } else {
 	return this;
       }
     } else {
-      return new Game2(this.param,
+      return new Game2(this.stage,
 		       new Player(new Posn (this.player.center.x,this.player.center.y+10),
 				  this.player.facing,
 				  this.player.running,
@@ -711,7 +795,8 @@ class Game2 extends World {
 				  this.player.health),
 		       this.low,
 		       this.loe,
-		       this.lop);
+		       this.lop,
+		       this.back);
     }
   }
   
@@ -724,32 +809,36 @@ class Game2 extends World {
 	if (0 < (pLoc.x - eLoc.x) &&
 	    (pLoc.x - eLoc.x) < 80){
 	  if (currEnemy.getEnemy().shooting>0){
-	    return new Game2(this.param,
-			   this.player,
-			   this.low,
-			   this.loe.attack(currEnemy.getEnemy(),"right"),
-			   this.lop);
+	    return new Game2(this.stage,
+			     this.player,
+			     this.low,
+			     this.loe.attack(currEnemy.getEnemy(),"right"),
+			     this.lop,
+			     this.back);
 	  } else {
-	  return new Game2(this.param,
-			   this.player,
-			   this.low.eShoot(eLoc,"right",currEnemy.getEnemy().type),
-			   this.loe.attack(currEnemy.getEnemy(),"right"),
-			   this.lop);
+	    return new Game2(this.stage,
+			     this.player,
+			     this.low.eShoot(eLoc,"right",currEnemy.getEnemy().type),
+			     this.loe.attack(currEnemy.getEnemy(),"right"),
+			     this.lop,
+			     this.back);
 	  }
 	} else if (-80 < (pLoc.x - eLoc.x) &&
 		   (pLoc.x - eLoc.x) < 0){
 	  if (currEnemy.getEnemy().shooting>0){
-	    return new Game2(this.param,
-			   this.player,
-			   this.low,
-			   this.loe.attack(currEnemy.getEnemy(),"left"),
-			   this.lop);
+	    return new Game2(this.stage,
+			     this.player,
+			     this.low,
+			     this.loe.attack(currEnemy.getEnemy(),"left"),
+			     this.lop,
+			     this.back);
 	  } else {
-	  return new Game2(this.param,
-			   this.player,
-			   this.low.eShoot(eLoc,"left",currEnemy.getEnemy().type),
-			   this.loe.attack(currEnemy.getEnemy(),"left"),
-			   this.lop);
+	    return new Game2(this.stage,
+			     this.player,
+			     this.low.eShoot(eLoc,"left",currEnemy.getEnemy().type),
+			     this.loe.attack(currEnemy.getEnemy(),"left"),
+			     this.lop,
+			     this.back);
 	  }
 	}
       }
@@ -765,12 +854,13 @@ class Game2 extends World {
     Posn wLoc = curr.weaponLoc();
     int count = this.low.num();
     for (int i=0; i<count;i++){
-      if (wLoc.x < 0 || this.param.x < wLoc.x){
-	return new Game2(this.param,
+      if (width < 0 || width < wLoc.x){
+	return new Game2(this.stage,
 			 this.player,
 			 this.low.cutTail(curr.getWeapon()),
 			 this.loe,
-			 this.lop);
+			 this.lop,
+			 this.back);
       }
       count = this.low.num();
       curr = curr.getNext();
@@ -795,7 +885,7 @@ class Game2 extends World {
 	hit = new Posn(Math.abs(wLoc.x-pLoc.x),
 		       Math.abs(wLoc.y-pLoc.y));
 	if (hit.x < 15 && hit.y < 20){
-	  return new Game2(this.param,
+	  return new Game2(this.stage,
 			   new Player(this.player.center,
 				      this.player.facing,
 				      this.player.running,
@@ -804,7 +894,8 @@ class Game2 extends World {
 				      this.player.health-1),
 			   this.low.remove(currWeapon.getWeapon()),
 			   this.loe,
-			   this.lop);
+			   this.lop,
+			   this.back);
 	}
       } else {
       	
@@ -817,11 +908,12 @@ class Game2 extends World {
 			 Math.abs(wLoc.y-eLoc.y));
 	  
 	  if (hit.x < 20 && hit.y < 20){
-	    return new Game2(this.param,
+	    return new Game2(this.stage,
 			     this.player,
 			     this.low.remove(currWeapon.getWeapon()),
 			     this.loe.damage(currEnemy.getEnemy()),
-			     this.lop);
+			     this.lop,
+			     this.back);
 	  }
 	}
       }
@@ -833,45 +925,19 @@ class Game2 extends World {
   // Defines the initial setup of the game world and begins the game
   public static void main(String args[]){
 
-    LoP Stage1Platforms =
-      new LoP(new Platform(147,
-			   new Posn(0,86)),
-	      new LoP(new Platform(179,
-				   new Posn(86, 151)),
-		      new LoP(new Platform(210,
-					   new Posn(151,313)),
-			      new LoP(new Platform(226,
-						   new Posn(313,379)),
-				      new LoP(new Platform(210,
-							   new Posn (379, 541)),
-					      new LoP (new Platform (210,
-								     new Posn(574, 700)),
-						       new noPlatform()))))));
 
-    Game2 Stage1 = new Game2(new Posn (700, 250),
+
+    Game2 Stage1 = new Game2("Stage1",
 			     new Player (new Posn (50,100),"right",0,0,0,10),
-			     new WeaponNode(new Weapon(true,
-						       new Posn(100,100),
-						       "buster","right"),
-					    new noWeapon()),
+			     new noWeapon(),
 			     new EnemyNode(new Enemy (new Posn (300,190),
 						      "left","ET",0,2),
 					   new EnemyNode(new Enemy (new Posn (100, 159),
 								    "left","ET",0,2),
 							 new noEnemy())),
-			     Stage1Platforms);
-    Game2 Stage2 = new Game2(new Posn (700,250),
-			     new Player (new Posn (50,100),"right",0,0,0,10),
-			     new WeaponNode(new Weapon(true,
-						       new Posn(100,100),
-						       "buster","right"),
-					    new noWeapon()),
-			     new EnemyNode(new Enemy (new Posn (300,200),
-						      "left","ET",0,0),
-					   new EnemyNode(new Enemy (new Posn (500, 200),
-								    "left","ET",0,0),
-							 new noEnemy())),
-			     Stage1Platforms);
-    Stage1.bigBang(Stage1.param.x, Stage1.param.y, 0.05);
+			     Stage1Platforms,
+			     new Background("Stage1"));
+    Stage1.bigBang(width, height, 0.1);
   }
 }
+
