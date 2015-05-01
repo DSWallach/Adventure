@@ -9,6 +9,10 @@ import javalib.colors.*;
 import javalib.worldimages.*;
 import java.io.*;
 
+//convert input.gif -transparent white output.gif  
+
+// Lenovo Reference number 214878350
+
 class Background{
 
   String stage;
@@ -22,6 +26,9 @@ class Background{
     FromFileImage Stage1Image = new FromFileImage (new Posn(350,125), "Stage1.PNG");
     FromFileImage Stage2Image = new FromFileImage (new Posn(350,125), "Stage2.PNG");
     FromFileImage StageRImage = new FromFileImage (new Posn(350,125), "StageR.PNG");
+    FromFileImage Stage3Image = new FromFileImage (new Posn(350,125), "Stage3.PNG");
+    FromFileImage Stage4Image = new FromFileImage (new Posn(350,125), "Stage4.PNG");
+    FromFileImage StageJImage = new FromFileImage (new Posn(350,125), "StageJ.PNG");
     
     if (this.stage.equals("Stage1")){
       return Stage1Image;
@@ -30,11 +37,11 @@ class Background{
     } else if (this.stage.equals("StageR")){
       return StageRImage;
     } else if (this.stage.equals("Stage3")){
-      return Stage1Image;
+      return Stage3Image;
     } else if (this.stage.equals("Stage4")){
-      return Stage1Image;
+      return Stage4Image;
     } else {
-      return StageRImage;
+      return StageJImage;
     }
   }
 }
@@ -142,7 +149,8 @@ class EnemyNode implements LoE{
   }
   public LoE attack(Enemy enemy, String dir){
     if(this.e==enemy){
-      if (dir.equals("right")){	if (this.getEnemy().shooting > 0) {
+      if (this.getEnemy().shooting > 0) {
+	if (dir.equals("right")){
 	  return new EnemyNode(new Enemy(this.e.center,
 					 this.e.type,
 					 "right",
@@ -151,32 +159,18 @@ class EnemyNode implements LoE{
 	} else {
 	  return new EnemyNode(new Enemy(this.e.center,
 					 this.e.type,
-					 "right",
-					 10,
-					 this.e.health),this.n);
-	}
-      } else {
-	if (this.getEnemy().shooting > 0) {
-	  return new EnemyNode(new Enemy(this.e.center,
-					 this.e.type,
 					 "left",
 					 this.e.shooting-1,
 					 this.e.health), this.n.attack(enemy, "left"));
-	} else {
-	  return new EnemyNode(new Enemy(this.e.center,
-					 this.e.type,
-					 "left",
-					 10,
-					 this.e.health),this.n);
 	}
       }
-    } else {
-      return new EnemyNode(new Enemy(this.e.center,
-				     this.e.type,
-				     this.e.facing,
-				     this.e.shooting-1,
-				     this.e.health), this.n.attack(enemy, dir));
     }
+    return new EnemyNode(new Enemy(this.e.center,
+				   this.e.type,
+				   this.e.facing,
+				   15,
+				   this.e.health), this.n.attack(enemy, dir));
+      
   }
   public WorldImage listDraw(WorldImage base){
     WorldImage Image = new OverlayImages(base, this.getEnemy().enemyDraw());
@@ -214,6 +208,22 @@ class Enemy {
     }
   }
 }
+
+// class Dr{
+//     Posn center;
+//   String type;
+//   String facing;
+//   int shooting;
+//   int health;
+  
+//   Enemy(Posn center, String type, String facing, int shooting, int health){
+//     this.center = center;
+//     this.type = type;
+//     this.facing = facing;
+//     this.shooting = shooting;
+//     this.health = health;
+//   }
+// }
 interface LoW{
   public boolean weaponHere();
   public int num();
@@ -408,102 +418,105 @@ class Player {
   // Generates an image of the player's character
   public FromFileImage draw(){
     if (this.facing.equals("right")){
-      if(this.jumping==0){
-	if (this.shooting==1){
-	  if (this.running==1){
-	    return new FromFileImage (this.center,"Shooting1.PNG");
-	  } else if (this.running==2 || this.running==4){
-	    return new FromFileImage (this.center,"Shooting2.PNG");
-	  } else if (this.running==3){
-	    return new FromFileImage (this.center,"Shooting3.PNG");
-	  } else {
-	    return new FromFileImage (this.center,"Shooting.PNG");
-	  }
-	} else {
-	  if (this.running==1){
-	    return new FromFileImage (this.center,"Running1.PNG");
-	  } else if (this.running==2 || this.running==4){
-	    return new FromFileImage (this.center,"Running2.PNG");
-	  } else if (this.running==3){
-	    return new FromFileImage (this.center,"Running3.PNG");
-	  } else {
-	    return new FromFileImage (this.center,"Standing.PNG");
-	  }
-	}
+      if (this.health==0){
+	return new FromFileImage (this.center,"Death.PNG");
       } else {
-	if (this.shooting==1){
-	  return new FromFileImage (this.center,"JumpShooting.PNG");
+	if(this.jumping==0){
+	  if (this.shooting==1){
+	    if (this.running<4 && !(this.running==0)){
+	      return new FromFileImage (this.center,"Shooting1.PNG");
+	    } else if (this.running<8 || this.running>11){
+	      return new FromFileImage (this.center,"Shooting2.PNG");
+	    } else if (this.running<12){
+	      return new FromFileImage (this.center,"Shooting3.PNG");
+	    } else {
+	      return new FromFileImage (this.center,"Shooting.PNG");
+	    }
+	  } else {
+	    if (this.running>0 && this.running<4){
+	      return new FromFileImage (this.center,"Running1.PNG");
+	    } else if (this.running<8 || this.running>11){
+	      return new FromFileImage (this.center,"Running2.PNG");
+	    } else if (this.running<12){
+	      return new FromFileImage (this.center,"Running3.PNG");
+	    } else {
+	      return new FromFileImage (this.center,"Standing.PNG");
+	    }
+	  }
 	} else {
-	  return new FromFileImage (this.center,"Jumping.PNG");
+	  if (this.shooting==1){
+	    return new FromFileImage (this.center,"JumpShooting.PNG");
+	  } else {
+	    return new FromFileImage (this.center,"Jumping.PNG");
+	  }
 	}
       }
     } else {
-      if (this.jumping==0){
-	if (this.shooting==1){
-	  if (this.running==1){
-	    return new FromFileImage (this.center,"LShooting1.PNG");
-	  } else if (this.running==2 || this.running==4){
-	    return new FromFileImage (this.center,"LShooting2.PNG");
-	  } else if (this.running==3){
-	    return new FromFileImage (this.center,"LShooting3.PNG");
-	  } else {
-	    return new FromFileImage (this.center,"LShooting.PNG");
-	  }
-	} else {
-	  if (this.running==1){
-	    return new FromFileImage (this.center,"LRunning1.PNG");
-	  } else if (this.running==2 || this.running==4){
-	    return new FromFileImage (this.center,"LRunning2.PNG");
-	  } else if (this.running==3){
-	    return new FromFileImage (this.center,"LRunning3.PNG");
-	  } else {
-	    return new FromFileImage (this.center,"LStanding.PNG");
-	  }
-	}
+      if (this.health==0){
+	return new FromFileImage (this.center,"LDeath.PNG");
       } else {
-	if (this.shooting==1){
-	  return new FromFileImage (this.center,"LJumpShooting.PNG");
+	if (this.jumping==0){
+	  if (this.shooting==1){
+	    if (this.running<4 && !(this.running==0)){
+	      return new FromFileImage (this.center,"LShooting1.PNG");
+	    } else if (this.running<8 || this.running>11){
+	      return new FromFileImage (this.center,"LShooting2.PNG");
+	    } else if (this.running<12){
+	      return new FromFileImage (this.center,"LShooting3.PNG");
+	    } else {
+	      return new FromFileImage (this.center,"LShooting.PNG");
+	    }
+	  } else {
+	    if (this.running<4 && !(this.running==0)){
+	      return new FromFileImage (this.center,"LRunning1.PNG");
+	    } else if (this.running<8 || this.running>11){
+	      return new FromFileImage (this.center,"LRunning2.PNG");
+	    } else if (this.running<12){
+	      return new FromFileImage (this.center,"LRunning3.PNG");
+	    } else {
+	      return new FromFileImage (this.center,"LStanding.PNG");
+	    }
+	  }
 	} else {
-	  return new FromFileImage (this.center,"LJumping.PNG");
+	  if (this.shooting==1){
+	    return new FromFileImage (this.center,"LJumpShooting.PNG");
+	  } else {
+	    return new FromFileImage (this.center,"LJumping.PNG");
+	  }
 	}
       }
-    }
-  }
-  public Player jump(){
-    if (this.facing.equals("right")){
-      return new Player (new Posn(this.center.x+6,
-				  this.center.y-10),
-			 this.facing,
-			 this.running,
-			 this.shooting,
-			 this.jumping-1,
-			 this.health);
-    } else {
-      return new Player (new Posn(this.center.x-6,
-				  this.center.y-10),
-			 this.facing,
-			 this.running,
-			 this.shooting,
-			 this.jumping-1,
-			 this.health);
     }
   }
   // Moves the player's based which arrow key is pressed
   public Player move(String ke){
-    if (this.running==4){
+    if (this.running==8){
       this.running=0;
     }
-    if (ke.equals("right") && this.jumping==0){
+    if (ke.equals("right") && this.jumping > 0 && this.jumping < 10){
       return new Player(new Posn(this.center.x + 10, this.center.y),
 			"right",
-			this.running+1,
+			this.running,
 		        0,
 			this.jumping,
 			this.health);
-    } else if (ke.equals("left") && this.jumping==0){
+    } else if (ke.equals("left") && this.jumping > 0 && this.jumping < 10){
       return new Player(new Posn(this.center.x - 10, this.center.y),
 			"left",
-			this.running+1,
+			this.running,
+			0,
+			this.jumping,
+			this.health);
+    } else if (ke.equals("right")){
+      return new Player(new Posn(this.center.x + 6, this.center.y),
+			"right",
+			this.running+4,
+			0,
+			this.jumping,
+			this.health);
+    } else if (ke.equals("left")){
+      return new Player(new Posn(this.center.x - 6, this.center.y),
+			"left",
+			this.running+4,
 			0,
 			this.jumping,
 			this.health);
@@ -512,10 +525,10 @@ class Player {
 			this.facing,
 			this.running,
 			this.shooting,
-			10,
+			1,
 			this.health);
     } else if (ke.equals("s")){
-      return new Player(new Posn(this.center.x, this.center.y),
+      return new Player(this.center,
 			this.facing,
 			this.running,
 			1,
@@ -523,34 +536,35 @@ class Player {
 			this.health);
     } else {
       return new Player(this.center,
-			this.facing,0,
+			this.facing,
+			this.running,
 			0,
 			this.jumping,
 			this.health);
     }
   }
   public Player shoot(String ke){
-    if (ke.equals("s")){
-      return new Player(this.center,
-			this.facing,
-			this.running,
-			1,
-			this.jumping,
-			this.health);
+      if (ke.equals("s")){
+	return new Player(this.center,
+			  this.facing,
+			  this.running,
+			  1,
+			  this.jumping,
+			  this.health);
     } else {
       return this;
     }
   }
 }
-interface PlatformNode{
+interface LoP{
   public boolean platformHere();
   public int num();
   public int platformHere(int h);
   public Platform getPlatform();
-  public PlatformNode getNext();
+  public LoP getNext();
 }
 
-class noPlatform implements PlatformNode{
+class noPlatform implements LoP{
   noPlatform(){}
   public boolean platformHere(){
     return false;
@@ -564,15 +578,15 @@ class noPlatform implements PlatformNode{
   public Platform getPlatform(){
     return null;
   }
-  public PlatformNode getNext(){
+  public LoP getNext(){
     return null;
   }
 }
-class LoP implements PlatformNode{
+class PlatformNode implements LoP{
   public Platform p;
-  public PlatformNode n;
+  public LoP n;
   
-  LoP(Platform p, PlatformNode n){
+  PlatformNode(Platform p, LoP n){
     this.p = p;
     this.n = n;
   }
@@ -592,7 +606,7 @@ class LoP implements PlatformNode{
   public Platform getPlatform(){
     return p;
   }
-  public PlatformNode getNext(){
+  public LoP getNext(){
     return n;
   }
 }      
@@ -609,19 +623,54 @@ class Game2 extends World {
   static int width = 700;
   static int height = 250;
   static LoP Stage1Platforms =
-    new LoP(new Platform(147,
-			 new Posn(0,86)),
-	    new LoP(new Platform(179,
-				 new Posn(86, 151)),
-		    new LoP(new Platform(210,
-					 new Posn(151,313)),
-			    new LoP(new Platform(226,
-						 new Posn(313,379)),
-				    new LoP(new Platform(210,
-							 new Posn (379, 541)),
-					    new LoP (new Platform (210,
-								   new Posn(574, 700)),
-						     new noPlatform()))))));
+    new PlatformNode(new Platform(147,
+				  new Posn(0,86)),
+    new PlatformNode(new Platform(179,
+				  new Posn(86, 151)),
+    new PlatformNode(new Platform(210,
+				  new Posn(151,313)),
+    new PlatformNode(new Platform(226,
+				  new Posn(313,379)),
+    new PlatformNode(new Platform(210,
+				  new Posn (379, 541)),
+    new PlatformNode(new Platform (210,
+				   new Posn(574, 700)),
+		     new noPlatform()))))));
+  
+  static PlatformNode Stage2Platforms =
+    new PlatformNode(new Platform(210,
+				  new Posn(0,45)),
+    new PlatformNode(new Platform(210,
+				  new Posn(78,139)),
+    new PlatformNode(new Platform(210,
+				  new Posn(173,234)),
+    new PlatformNode(new Platform(210,
+				  new Posn(268,329)),
+    new PlatformNode(new Platform(210,
+				  new Posn(363,425)),
+    new PlatformNode(new Platform(210,
+				  new Posn (458,519)),
+    new PlatformNode(new Platform(210,
+				  new Posn(553,700)),
+		     new noPlatform())))))));
+  
+  static LoP StageRPlatforms =
+    new PlatformNode(new Platform(117,
+				  new Posn(0,49)),
+    new PlatformNode(new Platform(149,
+				  new Posn(34,81)),
+    new PlatformNode(new Platform(181,
+				  new Posn(66,145)),
+    new PlatformNode(new Platform(213,
+				  new Posn(130,641)),
+    new PlatformNode(new Platform(213,
+				  new Posn(626,673)),
+    new PlatformNode(new Platform(117,
+				  new Posn(658,705)),
+		     new noPlatform()))))));
+    
+	    
+							  
   int count = 0;
 
   String stage;  
@@ -677,6 +726,13 @@ class Game2 extends World {
 			  this.lop,
 			  this.back).gravity().hit();
       }
+    } else if(this.player.jumping==0 && ke.equals("up")){
+      return new Game2(this.stage,
+		       this.player.move(ke),
+		       this.low.move(),
+		       this.loe,
+		       this.lop,
+		       this.back).gravity().hit();
     } else {
       return new Game2 (this.stage,
 			this.player.move(ke),
@@ -691,7 +747,7 @@ class Game2 extends World {
     if (this.player.center.x>650 && count==0){
       count++;
       return new Game2("Stage2",
-		       new Player (new Posn (50,100),"right",0,0,0,10),
+		       new Player (new Posn (10,210),"right",0,0,0,10),
 		       new WeaponNode(new Weapon(true,
 						 new Posn(100,100),
 						 "buster","right"),
@@ -701,12 +757,12 @@ class Game2 extends World {
 				     new EnemyNode(new Enemy (new Posn (500, 200),
 							      "left","ET",0,2),
 						   new noEnemy())),
-		       Stage1Platforms,
+		       Stage2Platforms,
 		       new Background("Stage2"));
     } else if (this.player.center.x>650 && count==1){
       count++;
       return new Game2("StageR",
-		       new Player (new Posn (50,100),"right",0,0,0,10),
+		       new Player (new Posn (50,117),"right",0,0,0,10),
 		       new WeaponNode(new Weapon(true,
 						 new Posn(100,100),
 						 "buster","right"),
@@ -716,51 +772,47 @@ class Game2 extends World {
 				     new EnemyNode(new Enemy (new Posn (500, 200),
 							      "left","ET",0,2),
 						   new noEnemy())),
-		       Stage1Platforms,
+		       StageRPlatforms,
 		       new Background("StageR"));
     } else {
-      if (this.low.num()>100){
-	return new Game2(this.stage,
-			 this.player,
-			 this.low,
-			 this.loe,
-			 this.lop,
-			 this.back).LoWClean().hit().AI();
-      } else if (this.player.jumping==0){
 	return new Game2(this.stage,
 			 this.player,
 			 this.low.move(),
 			 this.loe,
 			 this.lop,
-			 this.back).gravity().hit().AI();
-      } else {
-	return new Game2(this.stage,
-			 this.player.jump(),
-			 this.low.move(),
-			 this.loe,
-			 this.lop,
-			 this.back).hit().AI();
-      }
+			 this.back).hit().AI().gravity();
     }
   }
-  // Overlays the images of each of the game objects 
+  
+// Overlays the images of each of the game objects 
   public WorldImage makeImage(){
     return  new OverlayImages(
-			      new OverlayImages(
-						new OverlayImages(
-								  new OverlayImages(
-										    new OverlayImages(blank,
-												      this.back.draw()),
-										    this.loe.listDraw(blank)),
-								  this.player.draw()),
-						this.low.listDraw(blank)),
-			      new TextImage(new Posn(300, 20), "Player health " +
-					    this.player.health,Color.red));
+		new OverlayImages(
+		    new OverlayImages(
+			new OverlayImages(
+			    new OverlayImages(blank,
+					      this.back.draw()),
+			    this.loe.listDraw(blank)),
+			this.player.draw()),
+		    this.low.listDraw(blank)),
+		new TextImage(new Posn(300, 20), "Player health " +
+			      this.player.health,Color.red));
   }
   // Determines under what conditions the game world ends
   public WorldEnd worldEnds(){
-    if (this.player.center.y>height){
-      return new WorldEnd(true,this.makeImage());
+    if (this.player.center.y>height-30){
+      return new WorldEnd(true,new Game2(this.stage,
+					 new Player(new Posn (this.player.center.x,
+							      this.player.center.y),
+						    this.player.facing,
+						    this.player.running,
+						    this.player.shooting,
+						    this.player.jumping,
+						    0),
+					 this.low,
+					 this.loe,
+					 this.lop,
+					 this.back).makeImage());
     } else if (this.player.health==0){
       return new WorldEnd(true,this.makeImage());
     } else {
@@ -769,10 +821,23 @@ class Game2 extends World {
     }
   }
   public Game2 gravity(){
-    if (!(0==this.lop.platformHere(this.player.center.x))){
+    if (0 < this.player.jumping && this.player.jumping < 15){
+      return new Game2(this.stage,
+		       new Player(new Posn (this.player.center.x,this.player.center.y-5),
+				  this.player.facing,
+				  this.player.running,
+				  this.player.shooting,
+
+				  this.player.jumping+1,
+				  this.player.health),
+		       this.low,
+		       this.loe,
+		       this.lop,
+		       this.back);
+    } else if (!(0==this.lop.platformHere(this.player.center.x))){
       if (this.player.center.y < this.lop.platformHere(this.player.center.x)-20){
 	return new Game2(this.stage,
-			 new Player(new Posn (this.player.center.x,this.player.center.y+10),
+			 new Player(new Posn (this.player.center.x,this.player.center.y+5),
 				    this.player.facing,
 				    this.player.running,
 				    this.player.shooting,
@@ -783,11 +848,21 @@ class Game2 extends World {
 			 this.lop,
 			 this.back);
       } else {
-	return this;
+	return new Game2(this.stage,
+			 new Player(this.player.center,
+				    this.player.facing,
+				    this.player.running,
+				    this.player.shooting,
+				    0,
+				    this.player.health),
+			 this.low,
+			 this.loe,
+			 this.lop,
+			 this.back);
       }
     } else {
       return new Game2(this.stage,
-		       new Player(new Posn (this.player.center.x,this.player.center.y+10),
+		       new Player(new Posn (this.player.center.x,this.player.center.y+2),
 				  this.player.facing,
 				  this.player.running,
 				  this.player.shooting,
@@ -799,7 +874,8 @@ class Game2 extends World {
 		       this.back);
     }
   }
-  
+ 
+
   public Game2 AI(){
     LoE currEnemy = this.loe;
     Posn eLoc = currEnemy.enemyLoc();
@@ -877,8 +953,10 @@ class Game2 extends World {
     Posn pLoc = this.player.center;
     Posn wLoc = currWeapon.weaponLoc();
     Posn eLoc = currEnemy.enemyLoc();
-    
-    for (int i=0;i<this.low.num();i++){
+
+    //    for (int i=0;i<this.loe.num();i++){
+       
+      for (int i=0;i<this.low.num();i++){
       if (!this.low.getWeapon().friendly){
 	
 	pLoc = this.player.center;
@@ -916,7 +994,7 @@ class Game2 extends World {
 			     this.back);
 	  }
 	}
-      }
+	}
       currWeapon = currWeapon.getNext();
       wLoc = currWeapon.weaponLoc();
     }
@@ -924,11 +1002,9 @@ class Game2 extends World {
   }
   // Defines the initial setup of the game world and begins the game
   public static void main(String args[]){
-
-
-
+    
     Game2 Stage1 = new Game2("Stage1",
-			     new Player (new Posn (50,100),"right",0,0,0,10),
+			     new Player (new Posn (50,127),"right",0,0,0,10),
 			     new noWeapon(),
 			     new EnemyNode(new Enemy (new Posn (300,190),
 						      "left","ET",0,2),
@@ -937,7 +1013,8 @@ class Game2 extends World {
 							 new noEnemy())),
 			     Stage1Platforms,
 			     new Background("Stage1"));
-    Stage1.bigBang(width, height, 0.1);
+    
+    Stage1.bigBang(width, height, 0.05);
   }
 }
 
