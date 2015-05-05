@@ -140,12 +140,23 @@ class EnemyNode implements LoE{
 				       this.e.facing(),
 				       this.e.shooting(),
 				       this.e.health()-1));
-	} else {
+	} else if (this.e.type().equals("DrRacket")){	  
 	  return this.setEnemy (new DrRacket(this.e.center(),
 					     this.e.floating(),
 					     this.e.facing(),
 					     this.e.shooting(),
 					     this.e.health()-1));
+	} else if (this.e.type().equals("JMin")){
+	  return this.setEnemy(new JMin(this.e.center(),
+					this.e.facing(),
+					this.e.shooting(),
+					this.e.health()-1));
+	} else {
+	  return this.setEnemy(new J(this.e.center(),
+				     this.e.floating(),
+				     this.e.facing(),
+				     this.e.shooting(),
+				     this.e.health()-1));
 	}
       } else {
 	return n;
@@ -156,7 +167,7 @@ class EnemyNode implements LoE{
   }
   public LoE attack(Enemy enemy, String dir){
     if(enemy.type().equals("DrRacket") && this.e==enemy){
-      if (this.e.shooting()>20){
+      if (this.e.shooting()>10){
 	return new EnemyNode(new DrRacket(this.e.center(),
 					  this.e.floating(),
 					  this.e.facing(),
@@ -216,6 +227,72 @@ interface Enemy {
   public String facing();
   public FromFileImage enemyDraw();
 }
+class JMin implements Enemy {
+  Posn center;
+  String facing;
+  int shooting;
+  int health;
+
+  JMin(Posn center, String facing, int shooting, int health){
+    this.center = center;
+    this.facing = facing;
+    this.shooting = shooting;
+    this.health = health;
+  }
+  public Posn center(){
+    return this.center;
+  }
+  public String type(){
+    return "JMin";
+  }
+  public boolean floating(){
+    return false;
+  }
+  public Enemy move(String dir){
+    if (this.shooting==11){
+      return new JMin(this.center,
+		      this.facing,
+		      0,
+		      this.health).move(dir);
+    } else if (dir.equals("right")){
+      return new JMin(new Posn (this.center.x + 7, this.center.y),
+		      "right",
+		      this.shooting+1,
+		      this.health);
+    } else if (dir.equals("left")){
+      return new JMin(new Posn (this.center.x - 7, this.center.y),
+		      "left",
+		      this.shooting+1,
+		      this.health);
+    } else {
+      return this;
+    }
+  }
+  public int health(){
+    return this.health;
+  }
+  public int shooting(){
+    return this.shooting;
+  }
+  public String facing(){
+    return this.facing;
+  }
+  public FromFileImage enemyDraw(){
+    if (this.facing.equals("right")){
+      if (this.shooting<6){
+	return new FromFileImage (this.center, "JMin.PNG");
+      } else {
+	return new FromFileImage (this.center, "JMin2.PNG");
+      }
+    } else {
+      if (this.shooting<6){
+	return new FromFileImage (this.center, "LJMin.PNG");
+      } else {
+	return new FromFileImage (this.center, "LJmin2.PNG");
+      }
+    }
+  }
+}
 class ET implements Enemy {
   
   Posn center;
@@ -267,6 +344,7 @@ class ET implements Enemy {
   }
 }
 class DrRacket implements Enemy {
+  
   Posn center;
   boolean floating;
   String facing;
@@ -299,42 +377,46 @@ class DrRacket implements Enemy {
     return this.facing;
   }
   public Enemy move(String dir){
-    if (dir.equals("float")){
-	return new DrRacket(new Posn(this.center.x, this.center.y-5),
+    int dif = 3;
+    
+    if (dir.equals("float") && this.center.y > 25){
+      return new DrRacket(new Posn(this.center.x, this.center.y-dif),
 			  true,
 			  this.facing,
 			  this.shooting+1,
 			  this.health);
-    } else if (dir.equals("land")){
-      return new DrRacket(new Posn(this.center.x, this.center.y+5),
-			  false,
-			  this.facing,
+    } else if (dir.equals("land") && this.center.y < 225){
+    return new DrRacket(new Posn(this.center.x, this.center.y+dif),
+			false,
+			this.facing,
 			  this.shooting+1,
 			  this.health);
-    } else if (dir.equals("up")){
-      return new DrRacket(new Posn(this.center.x, this.center.y-5),
+  } else if (dir.equals("up") && this.center.y > 25){
+      return new DrRacket(new Posn(this.center.x, this.center.y-dif),
 			  this.floating,
 			  this.facing,
 			  this.shooting,
 			  this.health);
-    } else if (dir.equals("down")){
-      return new DrRacket(new Posn(this.center.x, this.center.y+5),
+} else if (dir.equals("down") && this.center.y < 225){
+      return new DrRacket(new Posn(this.center.x, this.center.y+dif),
 			  this.floating,
 			  this.facing,
 			  this.shooting,
 			  this.health);
-    } else if (dir.equals("right")){
-      return new DrRacket(new Posn(this.center.x+5, this.center.y),
+    } else if (dir.equals("right") && this.center.x < 625){
+      return new DrRacket(new Posn(this.center.x+dif, this.center.y),
+			  this.floating,
+			  this.facing,
+			  this.shooting,
+			  this.health);
+    } else if (dir.equals("left") && this.center.x > 25){
+      return new DrRacket(new Posn(this.center.x-dif, this.center.y),
 			  this.floating,
 			  this.facing,
 			  this.shooting,
 			  this.health);
     } else {
-      return new DrRacket(new Posn(this.center.x-5, this.center.y-1),
-			  this.floating,
-			  this.facing,
-			  this.shooting,
-			  this.health);
+      return this;
     }
   }			 	
   public FromFileImage enemyDraw(){
@@ -361,7 +443,72 @@ class DrRacket implements Enemy {
     }
   }
 }
-			       
+class J implements Enemy {
+
+  Posn center;
+  Boolean floating;
+  String facing;
+  int shooting;
+  int health;
+  
+  J (Posn center, Boolean floating, String facing, int shooting, int health){
+    this.center = center;
+    this.floating = floating;
+    this.facing = facing;
+    this.shooting = shooting;
+    this.health = health;
+  }
+  public Posn center(){
+    return this.center;
+  }
+  public String type(){
+    return "J";
+  }
+  public boolean floating(){
+    return this.floating;
+  }
+  public Enemy move(String dir){
+    if (dir.equals("up") && this.center.y > 68){
+      return new J(new Posn(this.center.x, this.center.y-5),
+			  this.floating,
+			  this.facing,
+			  this.shooting,
+			  this.health);
+    } else if (dir.equals("down") && this.center.y < 182){
+      return new J(new Posn(this.center.x, this.center.y+5),
+			  this.floating,
+			  this.facing,
+			  this.shooting+1,
+			  this.health);
+    } else if (dir.equals("right") && this.center.x < 670){
+      return new J(new Posn(this.center.x+5, this.center.y),
+			  this.floating,
+			  this.facing,
+			  this.shooting+1,
+			  this.health);
+    } else if (dir.equals("left") && this.center.x > 30){
+      return new J(new Posn(this.center.x-5, this.center.y),
+			  this.floating,
+			  this.facing,
+			  this.shooting+1,
+			  this.health);
+    } else {
+      return this;
+    }
+  }
+  public int health(){
+    return this.health;
+  }
+  public int shooting(){
+    return this.shooting;
+  }
+  public String facing(){
+    return this.facing;
+  }
+  public FromFileImage enemyDraw(){
+    return new FromFileImage(this.center, "JMech.PNG");
+  }
+}
       
 interface LoW{
   public boolean weaponHere();
@@ -374,6 +521,7 @@ interface LoW{
   public LoW setNext(LoW n);
   public LoW remove(Weapon w);
   public LoW cutTail(Weapon w);
+  public LoW eShoot(Posn e, Posn aim, String dir, String type);
   public LoW eShoot(Posn e, String dir,String type);
   public WorldImage listDraw(WorldImage base);
 }
@@ -410,47 +558,83 @@ class noWeapon implements LoW{
   public LoW cutTail(Weapon w){
     return this;
   }
+  public LoW eShoot(Posn e, Posn aim, String dir, String type){
+    if (type.equals("Racketball")){
+      return new WeaponNode (new Weapon (false,
+					 new Posn (e.x+37, e.y-26),
+					 new Posn (aim.x - (e.x-24), aim.y - (e.y+54)),
+					 type,
+					 dir), this);
+    } else {
+      return eShoot(e, dir, type);
+    }
+  }
   public LoW eShoot(Posn e, String dir, String type){
     if (type.equals("ET")){
       if (dir.equals("right")){
 	return new WeaponNode (new Weapon (false,
 					   new Posn (e.x+5,e.y+7),
+					   new Posn (0,0),
 					   type,
 					   dir), this);
       } else {
 	return new WeaponNode (new Weapon (false,
 					   new Posn (e.x-5,e.y+7),
+					   new Posn (0,0),
 					   type,
 					   dir), this);
       }
     } else if (type.equals("Fireball")){
       if (dir.equals("right")){
 	return new WeaponNode (new Weapon (false,
-					   new Posn(e.x+5,
-						    e.y+5),
+					   new Posn(e.x+5,e.y+5),
+					   new Posn (0,0),
 					   type,
 					   dir), this);
       } else {
 	return new WeaponNode (new Weapon (false,
-					   new Posn(e.x-5,
-						    e.y+5),
+					   new Posn(e.x-5,e.y+5),
+					   new Posn (0,0),
 					   type,
 					   dir), this);
       }
+    } else if (type.equals("Jball")){
+      if (dir.equals("right")){
+	return new WeaponNode (new Weapon (false,
+					   new Posn(e.x+24,e.y+54),
+					   new Posn (0,0),
+					   type,
+					   dir), this);
+      } else {
+	return new WeaponNode (new Weapon (false,
+					   new Posn(e.x-24,e.y+54),
+					   new Posn (0,0),
+					   type,
+					   dir), this);
+      }
+    } else if (type.equals("RacketBall")){
+      return new WeaponNode (new Weapon (false,
+					 new Posn (e.x-24, e.y+56),
+					 new Posn (0,0),
+					 type,
+					 dir), this);
     } else {
       if (dir.equals("right")){
 	return new WeaponNode (new Weapon (false,
 					   new Posn (e.x+37,e.y-26),
+					   new Posn (0,0),
 					   type,
 					   dir), this);
       } else {
 	return new WeaponNode (new Weapon (false,
 					   new Posn (e.x-37,e.y-26),
+					   new Posn (0,0),
 					   type,
 					   dir), this);
       }
     }
   }
+
   public WorldImage listDraw(WorldImage base){
     return base;
   }
@@ -501,16 +685,29 @@ class WeaponNode implements LoW{
       return new WeaponNode(this.w,this.n.cutTail(w));
     }
   }
+  public LoW eShoot(Posn e, Posn aim, String dir, String type){
+    if (type.equals("Racketball")){
+      return new WeaponNode (new Weapon (false,
+					 new Posn (e.x-24, e.y+54),
+					 new Posn (aim.x - (e.x-24), aim.y - (e.y+54)),
+					 type,
+					 dir), this);
+    } else {
+      return eShoot(e, dir, type);
+    }
+  }
   public LoW eShoot (Posn e, String dir, String type){
     if (type.equals("ET")){
       if (dir.equals("right")){
 	return new WeaponNode (new Weapon (false,
 					   new Posn (e.x+5,e.y+7),
+					   new Posn (0,0),
 					   type,
 					   dir), this);
       } else {
 	return new WeaponNode (new Weapon (false,
 					   new Posn (e.x-5,e.y+7),
+					   new Posn (0,0),
 					   type,
 					   dir), this);
       }
@@ -518,11 +715,27 @@ class WeaponNode implements LoW{
       if (dir.equals("right")){
 	return new WeaponNode (new Weapon (false,
 					   new Posn(e.x+5,e.y+5),
+					   new Posn (0,0),
 					   type,
 					   dir), this);
       } else {
 	return new WeaponNode (new Weapon (false,
 					   new Posn(e.x-5,e.y+5),
+					   new Posn (0,0),
+					   type,
+					   dir), this);
+      }
+    } else if (type.equals("Jball")){
+       if (dir.equals("right")){
+	return new WeaponNode (new Weapon (false,
+					   new Posn(e.x+24,e.y+54),
+					   new Posn (0,0),
+					   type,
+					   dir), this);
+      } else {
+	return new WeaponNode (new Weapon (false,
+					   new Posn(e.x-24,e.y+54),
+					   new Posn (0,0),
 					   type,
 					   dir), this);
       }
@@ -530,11 +743,13 @@ class WeaponNode implements LoW{
       if (dir.equals("right")){
 	return new WeaponNode (new Weapon (false,
 					   new Posn (e.x+37,e.y-26),
+					   new Posn (0,0),
 					   type,
 					   dir), this);
       } else {
 	return new WeaponNode (new Weapon (false,
 					   new Posn (e.x-37,e.y-26),
+					   new Posn (0,0),
 					   type,
 					   dir), this);
       }
@@ -549,25 +764,25 @@ class Weapon{
   
   boolean friendly;
   Posn center;
+  Posn dir;
   String type;
   String facing;
   
-  Weapon(Boolean friendly, Posn center, String type, String facing){
+  Weapon(Boolean friendly, Posn center, Posn dir,String type, String facing){
     this.friendly = friendly;
     this.center = center;
+    this.dir = dir;
     this.type = type;
     this.facing = facing;
   }
   
   public FromFileImage weaponDraw(){
     if (this.friendly){
-      if(this.type.equals("buster")){
-	return new FromFileImage (this.center, "BusterShot.PNG");
-      } else {
-	return new FromFileImage (this.center,"BusterShot.PNG");
-      }
+      return new FromFileImage (this.center,"BusterShot.PNG");
     } else {
-      if (this.type.equals("Lambda")){
+      if (this.type.equals("Racketball")){
+	return new FromFileImage(this.center, "Racketball.PNG");
+      } else if (this.type.equals("Lambda")){
 	if (this.facing.equals("right")){
 	  return new FromFileImage(this.center, "Lambda.PNG");
 	} else {
@@ -581,23 +796,54 @@ class Weapon{
 	} else {
 	  return new FromFileImage (this.center,"LFireball.PNG");
 	}
+      } else if (this.type.equals("Jball")){
+	if (this.facing.equals("right")){
+	  return new FromFileImage (this.center,"Jball.PNG");
+	} else {
+	  return new FromFileImage (this.center,"LJball.PNG");
+	}
       } else {
 	return new FromFileImage(this.center,"blank.PNG");
       }
     }
   }
   public Weapon moveWeapon(){
-    if (this.type.equals("Fireball")){
+    if (this.type.equals("Racketball")){
+      	return new Weapon(this.friendly,
+			  new Posn(this.center.x+(this.dir.x/20),
+				   this.center.y+(this.dir.y/20)),
+			  this.dir,
+			  this.type,
+			  this.facing);
+    } else if (this.type.equals("Fireball")){
       if (this.facing.equals("right")){
 	return new Weapon(this.friendly,
 			  new Posn(this.center.x+15,
 				   this.center.y+10),
+			  this.dir,
 			  this.type,
 			  this.facing);
       } else {
 	return new Weapon(this.friendly,
 			  new Posn(this.center.x-15,
 				   this.center.y+10),
+			  this.dir,
+			  this.type,
+			  this.facing);
+      }
+    }  else if (this.type.equals("Jball")){
+      if (this.facing.equals("right")){
+	return new Weapon(this.friendly,
+			  new Posn(this.center.x+15,
+				   this.center.y+10),
+			  this.dir,
+			  this.type,
+			  this.facing);
+      } else {
+	return new Weapon(this.friendly,
+			  new Posn(this.center.x-15,
+				   this.center.y+10),
+			  this.dir,
 			  this.type,
 			  this.facing);
       }
@@ -605,10 +851,12 @@ class Weapon{
       if (this.facing.equals("right")){
 	return new Weapon(this.friendly,
 			  new Posn(this.center.x + 10,this.center.y),
+			  this.dir,
 			  this.type,this.facing);
       } else {
 	return new Weapon(this.friendly,
 			  new Posn(this.center.x - 10,this.center.y),
+			  this.dir,
 			  this.type,this.facing);
       }
     }
@@ -951,6 +1199,7 @@ class Game2 extends World {
 			  new WeaponNode(new Weapon(true,
 						    new Posn(this.player.center.x+5,
 							     this.player.center.y+7),
+						    new Posn (0,0),
 						    "Buster","right"), this.low),
 			  this.loe,
 			  this.lop,
@@ -960,6 +1209,7 @@ class Game2 extends World {
 			  new WeaponNode(new Weapon(true,
 						    new Posn(this.player.center.x-5,
 							     this.player.center.y+7),
+						    new Posn (0,0),
 						    "Buster","left"), this.low),
 			  this.loe,
 			  this.lop,
@@ -982,7 +1232,7 @@ class Game2 extends World {
   // Controls what happens on each tick of the game world
   public World onTick(){
     if (this.player.center.x>690 && this.back.stage.equals("Stage1")){
-      return new Game2(new Player (new Posn (10,190),"right",0,0,0,10),
+      return new Game2(new Player (new Posn (10,190),"right",0,0,0,this.player.health),
 		       new noWeapon(),
 		       new EnemyNode(new ET (new Posn (300,190),
 						"left",0,2),
@@ -992,7 +1242,7 @@ class Game2 extends World {
 		       Stage2Platforms,
 		       new Background("Stage2"));
     } else if (this.player.center.x>690 && this.back.stage.equals("Stage2")){
-      return new Game2(new Player (new Posn (10,97),"right",0,0,0,10),
+      return new Game2(new Player (new Posn (10,97),"right",0,0,0,this.player.health),
 		       new noWeapon(),
 		       new EnemyNode(new DrRacket(new Posn(350,125),
 					    false,
@@ -1002,31 +1252,32 @@ class Game2 extends World {
 		       StageRPlatforms,
 		       new Background("StageR"));
     } else if (this.player.center.x>690 && this.back.stage.equals("StageR")){
-      return new Game2(new Player (new Posn (20,135),"right",0,0,0,10),
+      return new Game2(new Player (new Posn (20,135),"right",0,0,0,this.player.health),
 		       new noWeapon(),
 		       new EnemyNode(new ET (new Posn (550,125),
 						"left",0,2),
 		       new EnemyNode(new ET (new Posn (485,184),
 						"left",0,2),
 		       new EnemyNode(new ET (new Posn(155,540),
-						"left",0,2),
+					     "left",0,2),
 				     new noEnemy()))),
 		       Stage3Platforms,
 		       new Background("Stage3"));
     } else if (this.player.center.x>690 && this.back.stage.equals("Stage3")){
-      return new Game2(new Player (new Posn (10,168),"right",0,0,0,10),
-		       new noWeapon(),
-		       new EnemyNode(new ET (new Posn (350,120),
-						"left",0,2),
-		       new EnemyNode(new ET (new Posn (500, 200),
-						"left",0,2),
-				     new noEnemy())),
-		       Stage4Platforms,
-		       new Background("Stage4"));      
+      return  new Game2(new Player (new Posn (20,125),"right",0,0,0,this.player.health),
+			      new noWeapon(),
+			      new noEnemy(),
+			      Stage3Platforms,
+			      new Background("Stage3"));
+
     } else if (this.player.center.x>690 && this.back.stage.equals("Stage4")){
-      return new Game2(new Player (new Posn (10,168),"right",0,0,0,10),
+      return new Game2(new Player (new Posn (10,168),"right",0,0,0,this.player.health),
 		       new noWeapon(),
-		       new noEnemy(),
+		         new EnemyNode(new DrRacket(new Posn(350,125),
+					    false,
+					    "left",
+					    0,
+					    10), new noEnemy()),
 		       StageJPlatforms,
 		       new Background("StageJ"));
     } else {
@@ -1044,13 +1295,19 @@ class Game2 extends World {
 		new OverlayImages(
 		    new OverlayImages(
 			new OverlayImages(
-			    new OverlayImages(blank,
-					      this.back.draw()),
-			    this.loe.listDraw(blank)),
-			this.player.draw()),
-		    this.low.listDraw(blank)),
-		new TextImage(new Posn(300, 20), "Player health " +
-			      this.player.health,Color.red));
+			    new OverlayImages(
+				new OverlayImages(
+				    new OverlayImages(blank,
+						      this.back.draw()),
+				    this.loe.listDraw(blank)),
+				this.player.draw()),
+			    this.low.listDraw(blank)),
+			new RectangleImage(new Posn(25, 60),
+					   25, 160, Color.black)),
+		    new RectangleImage(new Posn(25, 60),
+				       15, this.player.health*3, 
+				       Color.red)),
+		new TextImage(new Posn(300, 20), "J.shooting " + this.loe.getEnemy().shooting(),Color.red));
   }
   // Determines under what conditions the game world ends
   public WorldEnd worldEnds(){
@@ -1079,7 +1336,6 @@ class Game2 extends World {
 				  this.player.facing,
 				  this.player.running,
 				  this.player.shooting,
-
 				  this.player.jumping+1,
 				  this.player.health),
 		       this.low,
@@ -1134,7 +1390,7 @@ class Game2 extends World {
 		       this.low,
 		       this.loe.setEnemy(currEnemy.getEnemy().move("float")),
 		       this.lop,
-		       this.back);
+		       this.back).LoWClean();
     } else if (currEnemy.getEnemy().shooting()<1){
       return new Game2(this.player,
 		       this.low,
@@ -1213,6 +1469,108 @@ class Game2 extends World {
       }
     }
   }
+  public Game2 JAI(){
+ 
+    Enemy currEnemy = this.loe.getEnemy();
+    Posn eLoc = this.loe.enemyLoc();
+    Posn pLoc = this.player.center;
+    Random newRandom = new Random();
+    int rand = newRandom.nextInt(100);
+    if (currEnemy.shooting()==75 && currEnemy.center().x > 550){
+      return new Game2 (this.player,
+			this.low,
+			this.loe.setEnemy(new J(currEnemy.center(),
+						currEnemy.floating(),
+						currEnemy.facing(),
+						0,
+						currEnemy.health())),
+			this.lop,
+			this.back);
+    } else if (currEnemy.center().x < 100 || currEnemy.shooting()==75){
+      return new Game2(this.player,
+		       this.low,
+		       this.loe.setEnemy(new J(new Posn (currEnemy.center().x+5,
+							 currEnemy.center().y),
+						currEnemy.floating(),
+						currEnemy.facing(),
+						75,
+						currEnemy.health())),
+		       this.lop,
+		       this.back);
+    } else if (currEnemy.shooting()<1){
+      if (rand < 20){
+	return new Game2(this.player,
+			 this.low,
+			 this.loe.setEnemy(new J(currEnemy.center(),
+						 currEnemy.floating(),
+						 currEnemy.facing(),
+						 75,
+						 currEnemy.health())).setFirst(new JMin(new Posn(680,179),
+											"left",
+											0,
+											2)),
+			 this.lop,
+			 this.back);
+      } else if (rand < 60){
+	return new Game2(this.player,
+			 this.low,
+			 this.loe.setEnemy(new J(currEnemy.center(),
+						 true,
+						 currEnemy.facing(),
+						 currEnemy.shooting()+1,
+						 currEnemy.health())),
+			 this.lop,
+			 this.back);
+      } else {
+	return new Game2(this.player,
+			 this.low,
+			 this.loe.setEnemy(new J(currEnemy.center(),
+						 false,
+						 currEnemy.facing(),
+						 currEnemy.shooting()+1,
+						 currEnemy.health())),
+			 this.lop,
+			 this.back);
+      }
+    }  else if (currEnemy.floating()){
+      if (currEnemy.shooting() % 2 == 0){
+	return new Game2(this.player,
+			 this.low.eShoot(eLoc,"left","Jball"),
+			 this.loe.setEnemy(currEnemy.move("left")),
+			 this.lop,
+			 this.back);
+
+      } else {
+	return new Game2(this.player,
+			 this.low,
+			 this.loe.setEnemy(currEnemy.move(currEnemy.facing())),
+			 this.lop,
+			 this.back);
+      }      
+    } else {
+      if (currEnemy.shooting() % 10 == 0){
+	return new Game2(this.player,
+			 this.low.eShoot(eLoc, pLoc, "left","Racketball"),
+			 this.loe.setEnemy(new J(currEnemy.center(),
+						 false,
+						 currEnemy.facing(),
+						 currEnemy.shooting()+1,
+						 currEnemy.health())),
+			 this.lop,
+			 this.back);
+      } else {
+	return new Game2(this.player,
+			 this.low,
+			 this.loe.setEnemy(new J(currEnemy.center(),
+						 currEnemy.floating(),
+						 currEnemy.facing(),
+						 currEnemy.shooting()+1,
+						 currEnemy.health())),
+			 this.lop,
+			 this.back);
+      }      
+    }
+  }
   public Game2 AI(){
     LoE currEnemy = this.loe;
     Posn eLoc = currEnemy.enemyLoc();
@@ -1220,6 +1578,28 @@ class Game2 extends World {
     for (int i = 0; i<this.loe.num();i++){
       if (currEnemy.getEnemy().type().equals("DrRacket")){
 	return this.RacketAI();
+      } else if (currEnemy.getEnemy().type().equals("J")){
+	return this.JAI();
+      } else if (currEnemy.getEnemy().type().equals("JMin")){
+	if(eLoc.x < 100 && currEnemy.getEnemy().facing().equals("left")){
+	  return new Game2(this.player,
+			   this.low,
+			   this.loe.setEnemy(currEnemy.getEnemy().move("right")),
+			   this.lop,
+			   this.back);
+	} else if (eLoc.x > 650 && currEnemy.getEnemy().facing().equals("right")){
+	  	  return new Game2(this.player,
+			   this.low,
+			   this.loe.setEnemy(currEnemy.getEnemy().move("left")),
+				   this.lop,
+				   this.back);
+	} else {
+	  return new Game2(this.player,
+			   this.low,
+			   this.loe.setEnemy(currEnemy.getEnemy().move(currEnemy.getEnemy().facing())),
+			   this.lop,
+			   this.back);
+	}
       } else {
 	if (Math.abs(pLoc.y - eLoc.y)<50){
 	  if (0 < (pLoc.x - eLoc.x) &&
@@ -1290,8 +1670,6 @@ class Game2 extends World {
     Posn wLoc = currWeapon.weaponLoc();
     Posn eLoc = currEnemy.enemyLoc();
 
-    //    for (int i=0;i<this.loe.num();i++){
-       
     for (int i=0;i<this.low.num();i++){
       if (!this.low.getWeapon().friendly){
 	
@@ -1300,11 +1678,11 @@ class Game2 extends World {
 		       Math.abs(wLoc.y-pLoc.y));	  
 	if (hit.x < 20 && hit.y < 20){
 	  return new Game2(new Player(this.player.center,
-				      this.player.facing,
-				      this.player.running,
-				      this.player.shooting,
-				      this.player.jumping,
-				      this.player.health-1),
+					this.player.facing,
+					this.player.running,
+					this.player.shooting,
+					this.player.jumping,
+					this.player.health-1),
 			   this.low.remove(currWeapon.getWeapon()),
 			   this.loe,
 			   this.lop,
@@ -1330,14 +1708,23 @@ class Game2 extends World {
 
 	  } else if (currEnemy.getEnemy().type().equals("DrRacket")
 		     && (hit.x < 15 && hit.y < 50)) {
-	    return new Game2(new Player(this.player.center,
-					this.player.facing,
-					this.player.running,
-					this.player.shooting,
-					this.player.jumping,
-					this.player.health-1),
+	    return new Game2(this.player,
 			     this.low.remove(currWeapon.getWeapon()),
-			     this.loe,
+			     this.loe.damage(currEnemy.getEnemy()),
+			     this.lop,
+			     this.back);
+	  } else if (currEnemy.getEnemy().type().equals("J")
+		     && (hit.x < 15 && hit.y < 50)) {
+	    return new Game2(this.player,
+			     this.low.remove(currWeapon.getWeapon()),
+			     this.loe.damage(currEnemy.getEnemy()),
+			     this.lop,
+			     this.back);
+	  } else if (currEnemy.getEnemy().type().equals("JMin")
+		     && (hit.x < 15 && hit.y < 20)) {
+	    return new Game2(this.player,
+			     this.low.remove(currWeapon.getWeapon()),
+			     this.loe.damage(currEnemy.getEnemy()),
 			     this.lop,
 			     this.back);
 	  }
@@ -1353,7 +1740,18 @@ class Game2 extends World {
   // Defines the initial setup of the game world and begins the game
   public static void main(String args[]){
     
-    Game2 Stage1 = new Game2(new Player (new Posn (40,127),"right",0,0,0,10),
+    Game2 Stage1 = new Game2(new Player (new Posn (10,168),"right",0,0,0,50),
+			     new noWeapon(),
+			     new EnemyNode(new J(new Posn(550,75),
+							false,
+							"left",
+							0,
+							20), new noEnemy()),
+			     StageJPlatforms,
+			     new Background("StageJ"));
+
+
+      /*new Game2(new Player (new Posn (40,127),"right",0,0,0,10),
 			     new noWeapon(),
 			     new EnemyNode(new ET (new Posn (300,190),
 						      "left",0,2),
@@ -1361,8 +1759,7 @@ class Game2 extends World {
 						      "left",0,2),
 					   new noEnemy())),
 			     Stage1Platforms,
-			     new Background("Stage1"));
-    
+			     new Background("Stage1"));*/
     Stage1.bigBang(width, height, 0.05);
   }
 }
