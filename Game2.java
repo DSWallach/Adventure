@@ -957,14 +957,14 @@ class Player {
     if (this.running==4){
       this.running=0;
     }
-    if (ke.equals("right")){
+    if (ke.equals("right") && this.center.x < 700){
       return new Player(new Posn(this.center.x + 10, this.center.y),
 			"right",
 			this.running+1,
 			0,
 			this.jumping,
 			this.health);
-    } else if (ke.equals("left")){
+    } else if (ke.equals("left") && this.center.x > 0){
       return new Player(new Posn(this.center.x - 10, this.center.y),
 			"left",
 			this.running+1,
@@ -1010,7 +1010,8 @@ class Player {
 interface LoP{
   public boolean platformHere();
   public int num();
-  public int platformHere(int h);
+  public int heightHere(int x, int y);
+  public boolean platformHere(int x, int y);
   public Platform getPlatform();
   public LoP getNext();
 }
@@ -1023,8 +1024,11 @@ class noPlatform implements LoP{
   public int num(){
     return 0;
   }
-  public int platformHere(int h){
-    return 0;
+  public int heightHere(int x, int y){
+    return 250;
+  }
+  public boolean platformHere(int x, int y){
+    return false;
   }
   public Platform getPlatform(){
     return null;
@@ -1047,11 +1051,18 @@ class PlatformNode implements LoP{
   public int num(){
     return 1 + this.n.num();
   }
-  public int platformHere(int x){
-    if (this.p.width.x < x && x < this.p.width.y){
-      return this.p.height;
+  public int heightHere(int x, int y){
+    if (this.platformHere(x, y)){
+      return this.p.height.x;
     } else {
-      return this.getNext().platformHere(x);
+      return this.getNext().heightHere(x, y);
+    }
+  }
+  public boolean platformHere(int x, int y){
+    if (this.p.width.x < x && x < this.p.width.y && this.p.height.x < y && this.p.height.y > y){
+      return true;
+    } else {
+      return this.getNext().platformHere(x,y);
     }
   }
   public Platform getPlatform(){
@@ -1063,8 +1074,8 @@ class PlatformNode implements LoP{
 }      
 class Platform {
   Posn width;
-  int height;
-  Platform(int height, Posn width){
+  Posn height;
+  Platform(Posn height, Posn width){
     this.height = height;
     this.width = width;
   }
@@ -1074,92 +1085,92 @@ class Game2 extends World {
   static int width = 700;
   static int height = 250;
   static PlatformNode Stage1Platforms =
-    new PlatformNode(new Platform(147,
+    new PlatformNode(new Platform(new Posn(147,167),
 				  new Posn(0,86)),
-    new PlatformNode(new Platform(179,
+    new PlatformNode(new Platform(new Posn(179,199),
 				  new Posn(86, 151)),
-    new PlatformNode(new Platform(210,
+    new PlatformNode(new Platform(new Posn(210,230),
 				  new Posn(151,313)),
-    new PlatformNode(new Platform(226,
+    new PlatformNode(new Platform(new Posn(226,246),
 				  new Posn(313,379)),
-    new PlatformNode(new Platform(210,
-				  new Posn (379, 541)),
-    new PlatformNode(new Platform (210,
-				   new Posn(574, 700)),
+    new PlatformNode(new Platform(new Posn(210,230),
+				  new Posn(379, 541)),
+    new PlatformNode(new Platform(new Posn(210,230),
+				  new Posn(574, 700)),
 		     new noPlatform()))))));
   
   static PlatformNode Stage2Platforms =
-    new PlatformNode(new Platform(210,
+    new PlatformNode(new Platform(new Posn(210,230),
 				  new Posn(0,45)),
-    new PlatformNode(new Platform(210,
+    new PlatformNode(new Platform(new Posn(210,230),
 				  new Posn(78,139)),
-    new PlatformNode(new Platform(210,
+    new PlatformNode(new Platform(new Posn(210,230),
 				  new Posn(173,234)),
-    new PlatformNode(new Platform(210,
+    new PlatformNode(new Platform(new Posn(210,230),
 				  new Posn(268,329)),
-    new PlatformNode(new Platform(210,
+    new PlatformNode(new Platform(new Posn(210,230),
 				  new Posn(363,425)),
-    new PlatformNode(new Platform(210,
+    new PlatformNode(new Platform(new Posn(210,230),
 				  new Posn (458,519)),
-    new PlatformNode(new Platform(210,
+    new PlatformNode(new Platform(new Posn(210,230),
 				  new Posn(553,700)),
 		     new noPlatform())))))));
   
   static PlatformNode StageRPlatforms =
-    new PlatformNode(new Platform(117,
+    new PlatformNode(new Platform(new Posn(117,137),
 				  new Posn(0,43)),
-    new PlatformNode(new Platform(149,
+    new PlatformNode(new Platform(new Posn(149,169),
 				  new Posn(28,75)),
-    new PlatformNode(new Platform(181,
+    new PlatformNode(new Platform(new Posn(181,201),
 				  new Posn(60,139)),
-    new PlatformNode(new Platform(213,
+    new PlatformNode(new Platform(new Posn(213,233),
 				  new Posn(124,635)),
-    new PlatformNode(new Platform(181,
+    new PlatformNode(new Platform(new Posn(181,201),
 				  new Posn(623,670)),
-    new PlatformNode(new Platform(117,
+    new PlatformNode(new Platform(new Posn(117,137),
 				  new Posn(652,700)),
 		     new noPlatform()))))));
   
   static PlatformNode Stage3Platforms =
-    new PlatformNode(new Platform(145,
+    new PlatformNode(new Platform(new Posn(145,165),
 				  new Posn(0,53)),
-    new PlatformNode(new Platform(115,
+    new PlatformNode(new Platform(new Posn(115,135),
 				  new Posn(53,150)),
-    new PlatformNode(new Platform(178,
+    new PlatformNode(new Platform(new Posn(178,198),
 				  new Posn(199,278)),
-    new PlatformNode(new Platform(130,
+    new PlatformNode(new Platform(new Posn(130,150),
 				  new Posn(311,378)),
-    new PlatformNode(new Platform(82,
+    new PlatformNode(new Platform(new Posn(82,102),
 				  new Posn(406,454)),
-    new PlatformNode(new Platform(194,
+    new PlatformNode(new Platform(new Posn(194,214),
 				  new Posn(406,439)),
-    new PlatformNode(new Platform(194,
+    new PlatformNode(new Platform(new Posn(194,214),
 				  new Posn(471,502)),
-    new PlatformNode(new Platform(165,
+    new PlatformNode(new Platform(new Posn(165,185),
 				  new Posn(535,566)),
-    new PlatformNode(new Platform(178,
+    new PlatformNode(new Platform(new Posn(178,198),
 				  new Posn(583,700)),
 		     new noPlatform())))))))));
   static PlatformNode Stage4Platforms =
-    new PlatformNode(new Platform(178,
+    new PlatformNode(new Platform(new Posn(178,198),
 				  new Posn (0,700)),
 		     new noPlatform());
   static PlatformNode StageJPlatforms =
-    new PlatformNode(new Platform(178,
+    new PlatformNode(new Platform(new Posn(178,198),
 				  new Posn(0,22)),
-    new PlatformNode(new Platform(103,
+    new PlatformNode(new Platform(new Posn(103,123),
 				  new Posn(82,179)),
-    new PlatformNode(new Platform(103,
+    new PlatformNode(new Platform(new Posn(103,123),
 				  new Posn(523,620)),
-    new PlatformNode(new Platform(150,
+    new PlatformNode(new Platform(new Posn(150,170),
 				  new Posn(556,620)),
-    new PlatformNode(new Platform(150,
+    new PlatformNode(new Platform(new Posn(150,170),
 				  new Posn(82,146)),
-    new PlatformNode(new Platform(120,
+    new PlatformNode(new Platform(new Posn(120,140),
 				  new Posn(82,115)),
-    new PlatformNode(new Platform(120,
+    new PlatformNode(new Platform(new Posn(120,140),
 				  new Posn(587,620)),
-    new PlatformNode(new Platform(210,
+    new PlatformNode(new Platform(new Posn(210,230),
 				  new Posn(0,700)),
 		     new noPlatform()))))))));
 							  
@@ -1235,12 +1246,13 @@ class Game2 extends World {
       return new Game2(new Player (new Posn (10,190),"right",0,0,0,this.player.health),
 		       new noWeapon(),
 		       new EnemyNode(new ET (new Posn (300,190),
-						"left",0,2),
+						"left",0,5),
 		       new EnemyNode(new ET (new Posn (500, 190),
-						"left",0,2),
+						"left",0,5),
 				     new noEnemy())),
 		       Stage2Platforms,
 		       new Background("Stage2"));
+      
     } else if (this.player.center.x>690 && this.back.stage.equals("Stage2")){
       return new Game2(new Player (new Posn (10,97),"right",0,0,0,this.player.health),
 		       new noWeapon(),
@@ -1251,48 +1263,51 @@ class Game2 extends World {
 					    10), new noEnemy()),
 		       StageRPlatforms,
 		       new Background("StageR"));
+      
     } else if (this.player.center.x>690 && this.back.stage.equals("StageR")){
       return new Game2(new Player (new Posn (20,135),"right",0,0,0,this.player.health),
 		       new noWeapon(),
-		       new EnemyNode(new ET (new Posn (550,125),
-						"left",0,2),
-		       new EnemyNode(new ET (new Posn (485,184),
-						"left",0,2),
-		       new EnemyNode(new ET (new Posn(155,540),
-					     "left",0,2),
-				     new noEnemy()))),
+		       new EnemyNode(new ET (new Posn (251,158),
+						"left",0,5),
+		       new EnemyNode(new ET (new Posn (485,174),
+						"left",0,5),
+		       new EnemyNode(new ET (new Posn(550,142),
+					     "left",0,5),
+		       new EnemyNode(new ET (new Posn(610,158),
+					     "left",0,5),						   
+				     new noEnemy())))),
 		       Stage3Platforms,
 		       new Background("Stage3"));
+      
     } else if (this.player.center.x>690 && this.back.stage.equals("Stage3")){
-      return  new Game2(new Player (new Posn (20,125),"right",0,0,0,this.player.health),
+      return  new Game2(new Player (new Posn (20,158),"right",0,0,0,this.player.health),
 			      new noWeapon(),
 			      new noEnemy(),
-			      Stage3Platforms,
-			      new Background("Stage3"));
+			      Stage4Platforms,
+			      new Background("Stage4"));
 
     } else if (this.player.center.x>690 && this.back.stage.equals("Stage4")){
-      return new Game2(new Player (new Posn (10,168),"right",0,0,0,this.player.health),
-		       new noWeapon(),
-		         new EnemyNode(new DrRacket(new Posn(350,125),
-					    false,
-					    "left",
-					    0,
-					    10), new noEnemy()),
-		       StageJPlatforms,
-		       new Background("StageJ"));
+      return new Game2(new Player (new Posn (10,158),"right",0,0,0,this.player.health),
+			     new noWeapon(),
+			     new EnemyNode(new J(new Posn(550,75),
+							false,
+							"left",
+							0,
+							20), new noEnemy()),
+			     StageJPlatforms,
+			     new Background("StageJ"));
     } else {
       return new Game2(this.player,
 		       this.low.move(),
 		       this.loe,
 		       this.lop,
-		       this.back).hit().AI().gravity();
+		       this.back).gravity().AI().hit();
     }
   }
   
 // Overlays the images of each of the game objects 
   public WorldImage makeImage(){
     return  new OverlayImages(
-		new OverlayImages(
 		    new OverlayImages(
 			new OverlayImages(
 			    new OverlayImages(
@@ -1303,11 +1318,10 @@ class Game2 extends World {
 				this.player.draw()),
 			    this.low.listDraw(blank)),
 			new RectangleImage(new Posn(25, 60),
-					   25, 160, Color.black)),
+					   25, 85, Color.black)),
 		    new RectangleImage(new Posn(25, 60),
 				       15, this.player.health*3, 
-				       Color.red)),
-		new TextImage(new Posn(300, 20), "J.shooting " + this.loe.getEnemy().shooting(),Color.red));
+				       Color.blue));
   }
   // Determines under what conditions the game world ends
   public WorldEnd worldEnds(){
@@ -1342,32 +1356,31 @@ class Game2 extends World {
 		       this.loe,
 		       this.lop,
 		       this.back);
-    } else if (!(0==this.lop.platformHere(this.player.center.x))){
-      if (this.player.center.y < this.lop.platformHere(this.player.center.x)-20){
-	return new Game2(new Player(new Posn (this.player.center.x,this.player.center.y+5),
-				    this.player.facing,
-				    this.player.running,
-				    this.player.shooting,
-				    this.player.jumping,
-				    this.player.health),
-			 this.low,
-			 this.loe,
-			 this.lop,
-			 this.back);
-      } else {
-	return new Game2(new Player(this.player.center,
-				    this.player.facing,
-				    this.player.running,
-				    this.player.shooting,
-				    0,
-				    this.player.health),
-			 this.low,
-			 this.loe,
-			 this.lop,
-			 this.back);
-      }
+    } /*else if (this.lop.platformHere(this.player.center.x, this.player.center.y+20) && this.player.jumping > 0){
+      return new Game2(new Player(new Posn(this.player.center.x,
+					   this.lop.heightHere(this.player.center.x,this.player.center.y+20)-19),
+				  this.player.facing,
+				  this.player.running,
+				  this.player.shooting,
+				  this.player.jumping,
+				  this.player.health),
+		       this.low,
+		       this.loe,
+		       this.lop,
+		       this.back);
+    }*/else if (this.lop.platformHere(this.player.center.x, this.player.center.y+20)){
+      return new Game2(new Player(this.player.center,
+				  this.player.facing,
+				  this.player.running,
+				  this.player.shooting,
+				  0,
+				  this.player.health),
+		       this.low,
+		       this.loe,
+		       this.lop,
+		       this.back);
     } else {
-      return new Game2(new Player(new Posn (this.player.center.x,this.player.center.y+2),
+      return new Game2(new Player(new Posn (this.player.center.x,this.player.center.y+5),
 				  this.player.facing,
 				  this.player.running,
 				  this.player.shooting,
@@ -1740,26 +1753,30 @@ class Game2 extends World {
   // Defines the initial setup of the game world and begins the game
   public static void main(String args[]){
     
-    Game2 Stage1 = new Game2(new Player (new Posn (10,168),"right",0,0,0,50),
-			     new noWeapon(),
-			     new EnemyNode(new J(new Posn(550,75),
-							false,
-							"left",
-							0,
-							20), new noEnemy()),
-			     StageJPlatforms,
-			     new Background("StageJ"));
+    Game2 Stage1 = new Game2(new Player (new Posn (20,135),"right",0,0,0,25),
+		       new noWeapon(),
+		       new EnemyNode(new ET (new Posn (251,158),
+						"left",0,5),
+		       new EnemyNode(new ET (new Posn (485,174),
+						"left",0,5),
+		       new EnemyNode(new ET (new Posn(550,142),
+					     "left",0,5),
+		       new EnemyNode(new ET (new Posn(610,158),
+					     "left",0,5),						   
+				     new noEnemy())))),
+		       Stage3Platforms,
+		       new Background("Stage3"));
 
-
-      /*new Game2(new Player (new Posn (40,127),"right",0,0,0,10),
+      /*new Game2(new Player (new Posn (40,127),"right",0,0,0,25),
 			     new noWeapon(),
 			     new EnemyNode(new ET (new Posn (300,190),
-						      "left",0,2),
+						      "left",0,5),
 			     new EnemyNode(new ET (new Posn (450, 190),
-						      "left",0,2),
+						      "left",0,5),
 					   new noEnemy())),
 			     Stage1Platforms,
 			     new Background("Stage1"));*/
+    
     Stage1.bigBang(width, height, 0.05);
   }
 }
