@@ -3,7 +3,7 @@ import java.awt.event.*;
 import java.awt.image.*;
 import java.util.*;
 import java.math.*;
-import javalib.tester.*;
+import tester.*;
 import javalib.funworld.*;
 import javalib.colors.*;
 import javalib.worldimages.*;
@@ -225,9 +225,12 @@ interface Enemy {
   public int health();
   public int shooting();
   public String facing();
-  public FromFileImage enemyDraw();
+  public OverlayImages enemyDraw();
 }
 class JMin implements Enemy {
+
+  FromFileImage blank  = new FromFileImage (new Posn(0,0), "blank.png");
+  
   Posn center;
   String facing;
   int shooting;
@@ -277,23 +280,25 @@ class JMin implements Enemy {
   public String facing(){
     return this.facing;
   }
-  public FromFileImage enemyDraw(){
+  public OverlayImages enemyDraw(){
     if (this.facing.equals("right")){
       if (this.shooting<6){
-	return new FromFileImage (this.center, "JMin.PNG");
+	return new OverlayImages(blank, new FromFileImage (this.center, "JMin.PNG"));
       } else {
-	return new FromFileImage (this.center, "JMin2.PNG");
+	return new OverlayImages(blank, new FromFileImage (this.center, "JMin2.PNG"));
       }
     } else {
       if (this.shooting<6){
-	return new FromFileImage (this.center, "LJMin.PNG");
+	return new OverlayImages(blank, new FromFileImage (this.center, "LJMin.PNG"));
       } else {
-	return new FromFileImage (this.center, "LJmin2.PNG");
+	return new OverlayImages(blank, new FromFileImage (this.center, "LJmin2.PNG"));
       }
     }
   }
 }
 class ET implements Enemy {
+
+  FromFileImage blank  = new FromFileImage (new Posn(0,0), "blank.png");
   
   Posn center;
   String facing;
@@ -327,18 +332,18 @@ class ET implements Enemy {
   public String facing(){
     return this.facing;
   }
-  public FromFileImage enemyDraw(){
+  public OverlayImages enemyDraw(){
       if (this.facing.equals("right")){
 	if (this.shooting>0){
-	  return new FromFileImage (this.center,"ETShooting.PNG");
+	  return new OverlayImages(blank, new FromFileImage (this.center,"ETShooting.PNG"));
 	} else {
-	  return new FromFileImage (this.center,"ETStanding.PNG");
+	  return new OverlayImages(blank, new FromFileImage (this.center,"ETStanding.PNG"));
 	}
       } else {
 	if (this.shooting>0){
-	  return new FromFileImage (this.center,"LETShooting.PNG");
+	  return new OverlayImages(blank, new FromFileImage (this.center,"LETShooting.PNG"));
 	} else {
-	  return new FromFileImage (this.center,"LETStanding.PNG");
+	  return new OverlayImages(blank, new FromFileImage (this.center,"LETStanding.PNG"));
 	}
       }
   }
@@ -419,26 +424,37 @@ class DrRacket implements Enemy {
       return this;
     }
   }			 	
-  public FromFileImage enemyDraw(){
+  public OverlayImages enemyDraw(){
+    OverlayImages healthBar = new OverlayImages(new RectangleImage(new Posn(675, 125),
+								   25, 220, Color.black),
+						new RectangleImage(new Posn(675, 60),
+								   15, this.health*4, 
+								   Color.red));
     if (this.facing.equals("right")){
       if (this.shooting>1){
 	if (this.floating){
-	  return new FromFileImage(this.center, "DrRacketFireball.PNG");
+	  return new OverlayImages(new FromFileImage(this.center, "DrRacketFireball.PNG"),
+				   healthBar);
 	} else {
-	  return new FromFileImage(this.center, "DrRacketShooting.PNG");
+	return new OverlayImages(new FromFileImage(this.center, "DrRacketShooting.PNG"),
+				 healthBar);
 	}
       } else {
-	return new FromFileImage(this.center,"DrRacketFloating.PNG");
+      return new OverlayImages(new FromFileImage(this.center,"DrRacketFloating.PNG"),
+			       healthBar);
       }
     } else {
       if (this.shooting>1){
 	if (this.floating){
-	  return new FromFileImage(this.center, "LDrRacketFireball.PNG");
+	  return new OverlayImages(new FromFileImage(this.center, "LDrRacketFireball.PNG"),
+				   healthBar);
 	} else {
-	  return new FromFileImage(this.center, "LDrRacketShooting.PNG");
+	  return new OverlayImages(new FromFileImage(this.center, "LDrRacketShooting.PNG"),
+				   healthBar);
 	}
       } else {
-	return new FromFileImage(this.center,"LDrRacketFloating.PNG");
+	return new OverlayImages(new FromFileImage(this.center,"LDrRacketFloating.PNG"),
+				 healthBar);
       }
     }
   }
@@ -505,8 +521,13 @@ class J implements Enemy {
   public String facing(){
     return this.facing;
   }
-  public FromFileImage enemyDraw(){
-    return new FromFileImage(this.center, "JMech.PNG");
+  public OverlayImages enemyDraw(){
+    return new OverlayImages(new OverlayImages(new FromFileImage(this.center, "JMech.PNG"),
+					       new RectangleImage(new Posn(675, 60),
+								  25, 115, Color.black)),
+			     new RectangleImage(new Posn(675, 60),
+						15, this.health*2, 
+						Color.red));
   }
 }
       
@@ -985,23 +1006,13 @@ class Player {
 			1,
 			this.jumping,
 			this.health);
-    } else {
+    } else if (ke.equals("down")){
       return new Player(this.center,
 			this.facing,
-			this.running,
+			0,
 			0,
 			this.jumping,
 			this.health);
-    }
-  }
-  public Player shoot(String ke){
-      if (ke.equals("s")){
-	return new Player(this.center,
-			  this.facing,
-			  this.running,
-			  1,
-			  this.jumping,
-			  this.health);
     } else {
       return this;
     }
@@ -1073,8 +1084,8 @@ class PlatformNode implements LoP{
   }
 }      
 class Platform {
-  Posn width;
   Posn height;
+  Posn width;
   Platform(Posn height, Posn width){
     this.height = height;
     this.width = width;
@@ -1088,15 +1099,15 @@ class Game2 extends World {
     new PlatformNode(new Platform(new Posn(147,167),
 				  new Posn(0,86)),
     new PlatformNode(new Platform(new Posn(179,199),
-				  new Posn(86, 151)),
+				  new Posn(86,151)),
     new PlatformNode(new Platform(new Posn(210,230),
 				  new Posn(151,313)),
     new PlatformNode(new Platform(new Posn(226,246),
 				  new Posn(313,379)),
     new PlatformNode(new Platform(new Posn(210,230),
-				  new Posn(379, 541)),
+				  new Posn(379,541)),
     new PlatformNode(new Platform(new Posn(210,230),
-				  new Posn(574, 700)),
+				  new Posn(574,700)),
 		     new noPlatform()))))));
   
   static PlatformNode Stage2Platforms =
@@ -1111,7 +1122,7 @@ class Game2 extends World {
     new PlatformNode(new Platform(new Posn(210,230),
 				  new Posn(363,425)),
     new PlatformNode(new Platform(new Posn(210,230),
-				  new Posn (458,519)),
+				  new Posn(458,519)),
     new PlatformNode(new Platform(new Posn(210,230),
 				  new Posn(553,700)),
 		     new noPlatform())))))));
@@ -1202,16 +1213,14 @@ class Game2 extends World {
   // Controls what happens in the game when a key is pressed
   public World onKeyEvent(String ke){
     // If the key "x" is pressed the game world ends
-    if (ke.equals("x")){
-      return this;
-    } else if (ke.equals("s")){
+    if (ke.equals("s")){
       if (this.player.facing.equals("right")){
 	return new Game2 (this.player.move(ke),
 			  new WeaponNode(new Weapon(true,
 						    new Posn(this.player.center.x+5,
 							     this.player.center.y+7),
 						    new Posn (0,0),
-						    "Buster","right"), this.low),
+						    "Buster","right"), this.low).move(),
 			  this.loe,
 			  this.lop,
 			  this.back).gravity().hit();
@@ -1221,17 +1230,11 @@ class Game2 extends World {
 						    new Posn(this.player.center.x-5,
 							     this.player.center.y+7),
 						    new Posn (0,0),
-						    "Buster","left"), this.low),
+						    "Buster","left"), this.low).move(),
 			  this.loe,
 			  this.lop,
 			  this.back).gravity().hit();
       }
-    } else if(this.player.jumping==0 && ke.equals("up")){
-      return new Game2(this.player.move(ke),
-		       this.low.move(),
-		       this.loe,
-		       this.lop,
-		       this.back).gravity().hit();
     } else {
       return new Game2 (this.player.move(ke),
 			this.low.move(),
@@ -1252,7 +1255,6 @@ class Game2 extends World {
 				     new noEnemy())),
 		       Stage2Platforms,
 		       new Background("Stage2"));
-      
     } else if (this.player.center.x>690 && this.back.stage.equals("Stage2")){
       return new Game2(new Player (new Posn (10,97),"right",0,0,0,this.player.health),
 		       new noWeapon(),
@@ -1260,10 +1262,9 @@ class Game2 extends World {
 					    false,
 					    "left",
 					    0,
-					    10), new noEnemy()),
+					    25), new noEnemy()),
 		       StageRPlatforms,
 		       new Background("StageR"));
-      
     } else if (this.player.center.x>690 && this.back.stage.equals("StageR")){
       return new Game2(new Player (new Posn (20,135),"right",0,0,0,this.player.health),
 		       new noWeapon(),
@@ -1293,7 +1294,7 @@ class Game2 extends World {
 							false,
 							"left",
 							0,
-							20), new noEnemy()),
+							50), new noEnemy()),
 			     StageJPlatforms,
 			     new Background("StageJ"));
     } else {
@@ -1356,19 +1357,7 @@ class Game2 extends World {
 		       this.loe,
 		       this.lop,
 		       this.back);
-    } /*else if (this.lop.platformHere(this.player.center.x, this.player.center.y+20) && this.player.jumping > 0){
-      return new Game2(new Player(new Posn(this.player.center.x,
-					   this.lop.heightHere(this.player.center.x,this.player.center.y+20)-19),
-				  this.player.facing,
-				  this.player.running,
-				  this.player.shooting,
-				  this.player.jumping,
-				  this.player.health),
-		       this.low,
-		       this.loe,
-		       this.lop,
-		       this.back);
-    }*/else if (this.lop.platformHere(this.player.center.x, this.player.center.y+20)){
+    } else if (this.lop.platformHere(this.player.center.x, this.player.center.y+20)){
       return new Game2(new Player(this.player.center,
 				  this.player.facing,
 				  this.player.running,
@@ -1684,18 +1673,16 @@ class Game2 extends World {
     Posn eLoc = currEnemy.enemyLoc();
 
     for (int i=0;i<this.low.num();i++){
-      if (!this.low.getWeapon().friendly){
-	
-	pLoc = this.player.center;
+      if (!this.low.getWeapon().friendly){	
 	hit = new Posn(Math.abs(wLoc.x-pLoc.x),
 		       Math.abs(wLoc.y-pLoc.y));	  
-	if (hit.x < 20 && hit.y < 20){
+	if (hit.x < 15 && hit.y < 20){
 	  return new Game2(new Player(this.player.center,
-					this.player.facing,
-					this.player.running,
-					this.player.shooting,
-					this.player.jumping,
-					this.player.health-1),
+				      this.player.facing,
+				      this.player.running,
+				      this.player.shooting,
+				      this.player.jumping,
+				      this.player.health-1),
 			   this.low.remove(currWeapon.getWeapon()),
 			   this.loe,
 			   this.lop,
@@ -1707,42 +1694,54 @@ class Game2 extends World {
 	eLoc = currEnemy.enemyLoc();
       
 	for (int j=0;j<this.loe.num();j++){
-	
-	  hit = new Posn(Math.abs(wLoc.x-eLoc.x),
-			 Math.abs(wLoc.y-eLoc.y));
+	  if (Math.abs(eLoc.x-pLoc.x) < 15 && Math.abs(eLoc.y-pLoc.y) < 20){
+	    return new Game2(new Player(this.player.center,
+					this.player.facing,
+					this.player.running,
+					this.player.shooting,
+					this.player.jumping,
+					this.player.health-1),
+			     this.low,
+			     this.loe,
+			     this.lop,
+			     this.back);
+	  } else {
+	    hit = new Posn(Math.abs(wLoc.x-eLoc.x),
+			   Math.abs(wLoc.y-eLoc.y));
 
-	  if (currEnemy.getEnemy().type().equals("ET")
-	      && (hit.x < 15 && hit.y < 20)){
-	    return new Game2(this.player,
-			     this.low.remove(currWeapon.getWeapon()),
-			     this.loe.damage(currEnemy.getEnemy()),
-			     this.lop,
-			     this.back);
+	    if (currEnemy.getEnemy().type().equals("ET")
+		&& (hit.x < 15 && hit.y < 20)){
+	      return new Game2(this.player,
+			       this.low.remove(currWeapon.getWeapon()),
+			       this.loe.damage(currEnemy.getEnemy()),
+			       this.lop,
+			       this.back);
 
-	  } else if (currEnemy.getEnemy().type().equals("DrRacket")
-		     && (hit.x < 15 && hit.y < 50)) {
-	    return new Game2(this.player,
-			     this.low.remove(currWeapon.getWeapon()),
-			     this.loe.damage(currEnemy.getEnemy()),
-			     this.lop,
-			     this.back);
-	  } else if (currEnemy.getEnemy().type().equals("J")
-		     && (hit.x < 15 && hit.y < 50)) {
-	    return new Game2(this.player,
-			     this.low.remove(currWeapon.getWeapon()),
-			     this.loe.damage(currEnemy.getEnemy()),
-			     this.lop,
-			     this.back);
-	  } else if (currEnemy.getEnemy().type().equals("JMin")
-		     && (hit.x < 15 && hit.y < 20)) {
-	    return new Game2(this.player,
-			     this.low.remove(currWeapon.getWeapon()),
-			     this.loe.damage(currEnemy.getEnemy()),
-			     this.lop,
-			     this.back);
+	    } else if (currEnemy.getEnemy().type().equals("DrRacket")
+		       && (hit.x < 15 && hit.y < 50)) {
+	      return new Game2(this.player,
+			       this.low.remove(currWeapon.getWeapon()),
+			       this.loe.damage(currEnemy.getEnemy()),
+			       this.lop,
+			       this.back);
+	    } else if (currEnemy.getEnemy().type().equals("J")
+		       && (hit.x < 15 && hit.y < 50)) {
+	      return new Game2(this.player,
+			       this.low.remove(currWeapon.getWeapon()),
+			       this.loe.damage(currEnemy.getEnemy()),
+			       this.lop,
+			       this.back);
+	    } else if (currEnemy.getEnemy().type().equals("JMin")
+		       && (hit.x < 15 && hit.y < 25)) {
+	      return new Game2(this.player,
+			       this.low.remove(currWeapon.getWeapon()),
+			       this.loe.damage(currEnemy.getEnemy()),
+			       this.lop,
+			       this.back);
+	    }
+	    currEnemy = currEnemy.getNext();
+	    eLoc = currEnemy.enemyLoc();
 	  }
-	  currEnemy = currEnemy.getNext();
-	  eLoc = currEnemy.enemyLoc();
 	}
       }
       currWeapon = currWeapon.getNext();
@@ -1753,7 +1752,149 @@ class Game2 extends World {
   // Defines the initial setup of the game world and begins the game
   public static void main(String args[]){
     
-    Game2 Stage1 = new Game2(new Player (new Posn (20,135),"right",0,0,0,25),
+    Game2 Stage1 = new Game2(new Player (new Posn (40,127),"right",0,0,0,25),
+			     new noWeapon(),
+			     new EnemyNode(new ET (new Posn (300,190),
+						      "left",0,5),
+			     new EnemyNode(new ET (new Posn (450, 190),
+						      "left",0,5),
+					   new noEnemy())),
+			     Stage1Platforms,
+			     new Background("Stage1"));
+    
+    Stage1.bigBang(width, height, 0.05);
+  }
+}
+
+class AdventureTest{
+  // int's for the width and height of the Game World
+  static int width = 700;
+  static int height = 250;
+
+  // Lists of platforms for each of the stages
+  static PlatformNode Stage1Platforms =
+    new PlatformNode(new Platform(new Posn(147,167),
+				  new Posn(0,86)),
+    new PlatformNode(new Platform(new Posn(179,199),
+				  new Posn(86, 151)),
+    new PlatformNode(new Platform(new Posn(210,230),
+				  new Posn(151,313)),
+    new PlatformNode(new Platform(new Posn(226,246),
+				  new Posn(313,379)),
+    new PlatformNode(new Platform(new Posn(210,230),
+				  new Posn(379, 541)),
+    new PlatformNode(new Platform(new Posn(210,230),
+				  new Posn(574, 700)),
+		     new noPlatform()))))));
+  
+  static PlatformNode Stage2Platforms =
+    new PlatformNode(new Platform(new Posn(210,230),
+				  new Posn(0,45)),
+    new PlatformNode(new Platform(new Posn(210,230),
+				  new Posn(78,139)),
+    new PlatformNode(new Platform(new Posn(210,230),
+				  new Posn(173,234)),
+    new PlatformNode(new Platform(new Posn(210,230),
+				  new Posn(268,329)),
+    new PlatformNode(new Platform(new Posn(210,230),
+				  new Posn(363,425)),
+    new PlatformNode(new Platform(new Posn(210,230),
+				  new Posn (458,519)),
+    new PlatformNode(new Platform(new Posn(210,230),
+				  new Posn(553,700)),
+		     new noPlatform())))))));
+  
+  static PlatformNode StageRPlatforms =
+    new PlatformNode(new Platform(new Posn(117,137),
+				  new Posn(0,43)),
+    new PlatformNode(new Platform(new Posn(149,169),
+				  new Posn(28,75)),
+    new PlatformNode(new Platform(new Posn(181,201),
+				  new Posn(60,139)),
+    new PlatformNode(new Platform(new Posn(213,233),
+				  new Posn(124,635)),
+    new PlatformNode(new Platform(new Posn(181,201),
+				  new Posn(623,670)),
+    new PlatformNode(new Platform(new Posn(117,137),
+				  new Posn(652,700)),
+		     new noPlatform()))))));
+  
+  static PlatformNode Stage3Platforms =
+    new PlatformNode(new Platform(new Posn(145,165),
+				  new Posn(0,53)),
+    new PlatformNode(new Platform(new Posn(115,135),
+				  new Posn(53,150)),
+    new PlatformNode(new Platform(new Posn(178,198),
+				  new Posn(199,278)),
+    new PlatformNode(new Platform(new Posn(130,150),
+				  new Posn(311,378)),
+    new PlatformNode(new Platform(new Posn(82,102),
+				  new Posn(406,454)),
+    new PlatformNode(new Platform(new Posn(194,214),
+				  new Posn(406,439)),
+    new PlatformNode(new Platform(new Posn(194,214),
+				  new Posn(471,502)),
+    new PlatformNode(new Platform(new Posn(165,185),
+				  new Posn(535,566)),
+    new PlatformNode(new Platform(new Posn(178,198),
+				  new Posn(583,700)),
+		     new noPlatform())))))))));
+  static PlatformNode Stage4Platforms =
+    new PlatformNode(new Platform(new Posn(178,198),
+				  new Posn (0,700)),
+		     new noPlatform());
+  static PlatformNode StageJPlatforms =
+    new PlatformNode(new Platform(new Posn(178,198),
+				  new Posn(0,22)),
+    new PlatformNode(new Platform(new Posn(103,123),
+				  new Posn(82,179)),
+    new PlatformNode(new Platform(new Posn(103,123),
+				  new Posn(523,620)),
+    new PlatformNode(new Platform(new Posn(150,170),
+				  new Posn(556,620)),
+    new PlatformNode(new Platform(new Posn(150,170),
+				  new Posn(82,146)),
+    new PlatformNode(new Platform(new Posn(120,140),
+				  new Posn(82,115)),
+    new PlatformNode(new Platform(new Posn(120,140),
+				  new Posn(587,620)),
+    new PlatformNode(new Platform(new Posn(210,230),
+				  new Posn(0,700)),
+		     new noPlatform()))))))));
+
+  // The six stages in the game
+
+  Game2 Stage1 = new Game2(new Player (new Posn (40,132),"right",0,0,0,25),
+			     new noWeapon(),
+			     new EnemyNode(new ET (new Posn (300,190),
+						      "left",0,5),
+			     new EnemyNode(new ET (new Posn (450, 190),
+						      "left",0,5),
+					   new noEnemy())),
+			     Stage1Platforms,
+			     new Background("Stage1"));
+  
+  Game2 Stage2 = new Game2(new Player (new Posn (10,190),"right",0,0,0,25),
+		       new noWeapon(),
+		       new EnemyNode(new ET (new Posn (300,190),
+						"left",0,5),
+		       new EnemyNode(new ET (new Posn (500, 190),
+						"left",0,5),
+				     new noEnemy())),
+		       Stage2Platforms,
+		       new Background("Stage2"));
+  
+  Game2 StageR = new Game2(new Player (new Posn (10,97),"right",0,0,0,25),
+		       new noWeapon(),
+		       new EnemyNode(new DrRacket(new Posn(350,125),
+					    false,
+					    "left",
+					    0,
+					    25), new noEnemy()),
+		       StageRPlatforms,
+		       new Background("StageR"));
+  
+  Game2 Stage3 = new Game2(new Player (new Posn (20,135),"right",0,0,0,25),
 		       new noWeapon(),
 		       new EnemyNode(new ET (new Posn (251,158),
 						"left",0,5),
@@ -1766,18 +1907,980 @@ class Game2 extends World {
 				     new noEnemy())))),
 		       Stage3Platforms,
 		       new Background("Stage3"));
+  
+  Game2 Stage4 = new Game2(new Player (new Posn (20,158),"right",0,0,0,25),
+			      new noWeapon(),
+			      new noEnemy(),
+			      Stage4Platforms,
+			      new Background("Stage4"));
 
-      /*new Game2(new Player (new Posn (40,127),"right",0,0,0,25),
-			     new noWeapon(),
-			     new EnemyNode(new ET (new Posn (300,190),
-						      "left",0,5),
-			     new EnemyNode(new ET (new Posn (450, 190),
-						      "left",0,5),
-					   new noEnemy())),
-			     Stage1Platforms,
-			     new Background("Stage1"));*/
+  Game2 StageJ = new Game2(new Player (new Posn (10,158),"right",0,0,0,25),
+			   new noWeapon(),
+			   new EnemyNode(new J(new Posn(550,75),
+					       false,
+					       "left",
+					       0,
+					       50), new noEnemy()),
+			   StageJPlatforms,
+			   new Background("StageJ"));
+  Player StartingPlayer = new Player (new Posn (40,132),"right",0,0,0,25);
+
+  boolean testPlayer(Tester t){
+    String[] stringArray;
+    stringArray = new String[5];
+    stringArray[0] = "s";
+    stringArray[1] = "up";
+    stringArray[2] = "down";
+    stringArray[3] = "left";
+    stringArray[4] = "right";
+    boolean passed = false;
     
-    Stage1.bigBang(width, height, 0.05);
+    for (int i = 0; i < 300; i++){
+
+      Random randomInput = new Random();
+      int randInput = randomInput.nextInt(5);
+      String input = stringArray[randInput];
+      Random randomX = new Random();
+      int randX = randomX.nextInt(701);
+      Random randomY = new Random();
+      int randY = randomY.nextInt(251);
+      Random randomJ = new Random();
+      int randJ = randomJ.nextInt(2);
+      
+      if (input.equals("right")){
+	if (randX == 700){
+	  passed = t.checkExpect(new Player (new Posn (randX,randY),"right",0,0,randJ,25).move(input),
+				 new Player (new Posn (randX,randY),"right",1,0,randJ,25),
+				 "Test MovePlayer - Right");
+	} else {
+	  passed = t.checkExpect(new Player (new Posn (randX,randY),"right",0,0,randJ,25).move(input),
+				 new Player (new Posn (randX+10,randY),"right",1,0,randJ,25),
+				 "Test MovePlayer - Right");
+	}
+      } else if (input.equals("left")){
+	if (randX == 0){
+	  passed = t.checkExpect(new Player (new Posn (randX,randY),"right",0,0,randJ,25).move(input),
+				 new Player (new Posn (randX,randY),"right",1,0,randJ,25),
+				 "Test MovePlayer - Left");
+	} else {
+	  passed = t.checkExpect(new Player (new Posn (randX,randY),"right",0,0,randJ,25).move(input),
+				 new Player (new Posn (randX-10,randY),"left",1,0,randJ,25),
+				 "Test MovePlayer - Left");
+	}
+      } else if (input.equals("up")){
+	if (randJ == 0){
+	  passed = t.checkExpect(new Player (new Posn (randX,randY),"right",0,0,randJ,25).move("up"),
+				 new Player (new Posn (randX,randY),"right",0,0,randJ+1,25),
+				 "Test MovePlayer - Jump");
+	} else {
+	  passed = t.checkExpect(new Player (new Posn (randX,randY),"right",0,0,randJ,25).move("up"),
+				 new Player (new Posn (randX,randY),"right",0,0,randJ,25),
+				 "Test MovePlayer - Jump While Jumping");
+	}
+      } else if (input.equals("down")){
+	passed = t.checkExpect(new Player (new Posn (randX,randY),"right",1,0,0,25).move("down"),
+			       new Player (new Posn (randX,randY),"right",0,0,0,25),
+			       "Test MovePlayer - Holster weapon and Stand Still");
+      } else {
+	if (randJ == 0){
+	  passed = t.checkExpect(new Game2(new Player (new Posn (randX,randY),"right",0,0,0,25),
+					   new noWeapon(),
+					   new noEnemy(),
+					   new PlatformNode(new Platform(new Posn(randY-30,randY+40),
+									 new Posn(randX-20,randX+20)),
+							    new noPlatform()),
+					   new Background("Stage1")).onKeyEvent("s"),
+				 new Game2(new Player (new Posn (randX,randY),"right",0,1,0,25),
+					   new WeaponNode(new Weapon(true,
+								     new Posn(randX+5,randY+7),
+								     new Posn (0,0),
+								     "Buster","right"), new noWeapon()).move(),
+					   new noEnemy(),
+					   new PlatformNode(new Platform(new Posn(randY-30,randY+40),
+									 new Posn(randX-20,randX+20)),
+							    new noPlatform()),
+					   new Background("Stage1")),
+				 "Test Player Shooting - Shooting Right");
+	} else {
+	  passed = t.checkExpect(new Game2(new Player (new Posn (randX,randY),"left",0,0,0,25),
+					   new noWeapon(),
+					   new noEnemy(),
+					   new PlatformNode(new Platform(new Posn(randY-30,randY+40),
+									 new Posn(randX-20,randX+20)),
+							    new noPlatform()),
+					   new Background("Stage1")).onKeyEvent("s"),
+				 new Game2(new Player (new Posn (randX,randY),"left",0,1,0,25),
+					   new WeaponNode(new Weapon(true,
+								     new Posn(randX-5,randY+7),
+								     new Posn (0,0),
+								     "Buster","left"), new noWeapon()).move(),
+					   new noEnemy(),
+					   new PlatformNode(new Platform(new Posn(randY-30,randY+40),
+									 new Posn(randX-20,randX+20)),
+							    new noPlatform()),
+					   new Background("Stage1")),
+				 "Test Player Shooting - Shooting Left");
+	}
+      }
+    }
+    return passed;
+  }
+  boolean testGravity(Tester t){
+    boolean passed = false;
+    for (int i = 0; i < 300; i++){
+      
+      Random randomX = new Random();
+      int randX = randomX.nextInt(701);
+      Random randomY = new Random();
+      int randY = randomY.nextInt(251);
+      Random randomPX = new Random();
+      int randPX = randomPX.nextInt(701);
+      Random randomPY = new Random();
+      int randPY = randomPY.nextInt(251);
+      Random random = new Random();
+      int rand = random.nextInt(100);
+      int randJ;
+      if (rand < 50){
+	Random randomJ = new Random();
+	randJ = randomJ.nextInt(30);
+      } else {
+	randJ = 0;
+      }
+      if (randJ == 0 && randPX-20 < randX && randX < randPX+20 && randPY-10 < randY+20 && randY+20 < randPY+10){
+	passed = t.checkExpect( new Game2(new Player (new Posn (randX,randY),"left",0,0,randJ,25),
+					  new noWeapon(),
+					  new noEnemy(),
+					  new PlatformNode(new Platform(new Posn(randPY-10,randPY+10),
+									new Posn(randPX-20,randPX+20)),
+							   new noPlatform()),
+					  new Background("Stage1")).gravity(),
+				new Game2(new Player (new Posn (randX,randY),"left",0,0,randJ,25),
+					  new noWeapon(),
+					  new noEnemy(),
+					  new PlatformNode(new Platform(new Posn(randPY-10,randPY+10),
+									new Posn(randPX-20,randPX+20)),
+							   new noPlatform()),
+					  new Background("Stage1")),
+				"Test Gravity() - Not Jumping, On a Platform");
+      } else if (0 < randJ && randJ < 15){
+	passed = t.checkExpect( new Game2(new Player (new Posn (randX,randY),"left",0,0,randJ,25),
+					  new noWeapon(),
+					  new noEnemy(),
+					  new PlatformNode(new Platform(new Posn(randPY-10,randPY+10),
+									new Posn(randPX-20,randPX+20)),
+							   new noPlatform()),
+					  new Background("Stage1")).gravity(),
+				new Game2(new Player (new Posn (randX,randY-5),"left",0,0,randJ+1,25),
+					  new noWeapon(),
+					  new noEnemy(),
+					  new PlatformNode(new Platform(new Posn(randPY-10,randPY+10),
+									new Posn(randPX-20,randPX+20)),
+							   new noPlatform()),
+					  new Background("Stage1")),
+				"Test Gravity() - Jumping, On a Platform");
+      } else if (randPX-20 < randX && randX < randPX+20 && randPY-10 < randY+20 && randY+20 < randPY+10){
+	passed = t.checkExpect( new Game2(new Player (new Posn (randX,randY),"left",0,0,randJ,25),
+					  new noWeapon(),
+					  new noEnemy(),
+					  new PlatformNode(new Platform(new Posn(randPY-10,randPY+10),
+									new Posn(randPX-20,randPX+20)),
+							   new noPlatform()),
+					  new Background("Stage1")).gravity(),
+				new Game2(new Player (new Posn (randX,randY),"left",0,0,0,25),
+					  new noWeapon(),
+					  new noEnemy(),
+					  new PlatformNode(new Platform(new Posn(randPY-10,randPY+10),
+									new Posn(randPX-20,randPX+20)),
+							   new noPlatform()),
+					  new Background("Stage1")),
+				"Test Gravity() - Falling, On a Platform");
+      } else {
+	passed = t.checkExpect( new Game2(new Player (new Posn (randX,randY),"left",0,0,randJ,25),
+					  new noWeapon(),
+					  new noEnemy(),
+					  new PlatformNode(new Platform(new Posn(randPY-10,randPY+10),
+									new Posn(randPX-20,randPX+20)),
+							   new noPlatform()),
+					  new Background("Stage1")).gravity(),
+				new Game2(new Player (new Posn (randX,randY+5),"left",0,0,randJ,25),
+					  new noWeapon(),
+					  new noEnemy(),
+					  new PlatformNode(new Platform(new Posn(randPY-10,randPY+10),
+									new Posn(randPX-20,randPX+20)),
+							   new noPlatform()),
+					  new Background("Stage1")),
+				"Test Gravity() - Falling, Not on a Platform");
+      }
+    }
+    return passed;
+  }
+  // Runs three hundred tests of the worldEnds() method checking if the world should end
+  boolean testWorldEnds(Tester t){
+    boolean passed = false;
+    for (int i = 0; i < 300; i++){
+
+      Random randomW = new Random();
+      int randW = randomW.nextInt(2);
+      Random randomX = new Random();
+      int randX = randomX.nextInt(701);
+      Random randomY = new Random();
+      int randY = randomY.nextInt(251);
+      Random randomH = new Random();
+      int randH = randomH.nextInt(26);
+      if (randW == 0){
+	passed = t.checkExpect( Stage1.worldEnds(),
+				new WorldEnd(false, Stage1.makeImage()),
+				"Test WorldEnd() - World Doesn't end");
+      } else if (randW == 1){
+	if (randY > 220){
+	  passed = t.checkExpect( new Game2(new Player (new Posn (randX,randY),"right",0,0,0,25),
+					    new noWeapon(),
+					    new noEnemy(),
+					    Stage3Platforms,
+					    new Background("Stage3")).worldEnds(),
+				  new WorldEnd(true,
+					       new Game2(new Player (new Posn (randX,randY),"right",0,0,0,0),
+							 new noWeapon(),
+							 new noEnemy(),
+							 Stage3Platforms,
+							 new Background("Stage3")).makeImage()),
+				  "Test WorldEnds() - Falling onto Spikes");
+	} else {
+	  passed = t.checkExpect( new Game2(new Player (new Posn (randX,randY),"right",0,0,0,25),
+					    new noWeapon(),
+					    new noEnemy(),
+					    Stage3Platforms,
+					    new Background("Stage3")).worldEnds(),
+				  new WorldEnd(false,
+					       new Game2(new Player (new Posn (randX,randY),"right",0,0,0,25),
+							 new noWeapon(),
+							 new noEnemy(),
+							 Stage3Platforms,
+							 new Background("Stage3")).makeImage()),
+				  "Test WorldEnds() - Did not fall onto spikes");
+	}
+      } else {
+	if (randH == 0){
+	  passed = t.checkExpect( new Game2(new Player (new Posn (20,135),"right",0,0,0,randH),
+					    new noWeapon(),
+					    new noEnemy(),
+					    Stage3Platforms,
+					    new Background("Stage3")).worldEnds(),
+				  new WorldEnd(true,
+					       new Game2(new Player (new Posn (20,135),"right",0,0,0,0),
+							 new noWeapon(),
+							 new noEnemy(),
+							 Stage3Platforms,
+							 new Background("Stage3")).makeImage()),
+				  "Test WorldEnds() - Player has zero health");
+	} else {
+	  passed = t.checkExpect( new Game2(new Player (new Posn (20,135),"right",0,0,0,randH),
+					    new noWeapon(),
+					    new noEnemy(),
+					    Stage3Platforms,
+					    new Background("Stage3")).worldEnds(),
+				  new WorldEnd(false,
+					       new Game2(new Player (new Posn (randX,randY),"right",0,0,0,randH),
+							 new noWeapon(),
+							 new noEnemy(),
+							 Stage3Platforms,
+							 new Background("Stage3")).makeImage()),
+				  "Test WorldEnds() - Player has at least one  health");
+	}
+      }
+    }
+    return passed;
+  }
+  // Runs three hundred tests of the hit() method checking if either the player or an enemy should be damaged
+  boolean testHitDetection(Tester t){
+    boolean passed = false;
+    for (int i = 0; i < 300; i++){
+
+      Random randomW = new Random();
+      int randW = randomW.nextInt(2);
+      Random randomWX = new Random();
+      int randWX = randomWX.nextInt(701);
+      Random randomWY = new Random();
+      int randWY = randomWY.nextInt(251);
+      Random randomX = new Random();
+      int randX = randomX.nextInt(701);
+      Random randomY = new Random();
+      int randY = randomX.nextInt(251);
+      if (randW == 0){
+	passed = t.checkExpect(Stage1.hit(),
+			       Stage1,
+			       "Test Hit Detection - No Hit");
+      } else if (randW == 0) {
+	if (Math.abs(randX-randWX) < 15 && Math.abs(randY - randWY) < 20){
+	  passed = t.checkExpect(new Game2(new Player (new Posn (40,132),"right",0,0,0,25),
+					   new WeaponNode(new Weapon(true,
+								     new Posn(randWX,randWY),
+								     new Posn (0,0),
+								     "Buster","right"), new noWeapon()),
+					   new EnemyNode(new ET (new Posn (randX,randY),
+								 "left",0,5),
+							 new EnemyNode(new ET (new Posn (450, 190),
+									       "left",0,5),
+								       new noEnemy())),
+					   Stage1Platforms,
+					   new Background("Stage1")).hit(),
+				 new Game2(new Player (new Posn (40,132),"right",0,0,0,25),
+					   new noWeapon(),
+					   new EnemyNode(new ET (new Posn (randX,randY),
+								 "left",0,4),
+							 new EnemyNode(new ET (new Posn (450, 190),
+									       "left",0,5),
+								       new noEnemy())),
+					   Stage1Platforms,
+					   new Background("Stage1")),
+				 "Test Hit Detection - Enemy Hit");
+	} else {
+	  passed = t.checkExpect(new Game2(new Player (new Posn (40,132),"right",0,0,0,25),
+					   new WeaponNode(new Weapon(true,
+								     new Posn(randWX,randWY),
+								     new Posn (0,0),
+								     "Buster","right"), new noWeapon()),
+					   new EnemyNode(new ET (new Posn (randX,randY),
+								 "left",0,5),
+							 new EnemyNode(new ET (new Posn (450, 190),
+									       "left",0,5),
+								       new noEnemy())),
+					   Stage1Platforms,
+					   new Background("Stage1")).hit(),
+				 new Game2(new Player (new Posn (40,132),"right",0,0,0,25),
+					   new WeaponNode(new Weapon(true,
+								     new Posn(randWX,randWY),
+								     new Posn (0,0),
+								     "Buster","right"), new noWeapon()),
+					   new EnemyNode(new ET (new Posn (randX,randY),
+								 "left",0,5),
+							 new EnemyNode(new ET (new Posn (450, 190),
+									       "left",0,5),
+								       new noEnemy())),
+					   Stage1Platforms,
+					   new Background("Stage1")),
+				 "Test Hit Detection - Enemy Missed");
+
+	}
+      } else if (randW == 1){
+	if (Math.abs(randWX-randX) < 15 && Math.abs(randWY - randY) < 20){
+	  passed = t.checkExpect(new Game2(new Player (new Posn (randX,randY),"right",0,0,0,25),
+					   new WeaponNode(new Weapon(false,
+								     new Posn(randWX,randWY),
+								     new Posn (0,0),
+								     "ET","left"), new noWeapon()),
+					   new noEnemy(),
+					   Stage1Platforms,
+					   new Background("Stage1")).hit(),
+				 new Game2(new Player (new Posn (randX,randY),"right",0,0,0,24),
+					   new noWeapon(),
+					   new noEnemy(),
+					   Stage1Platforms,
+					   new Background("Stage1")),
+				 "Test Hit Detection - Player Hit");
+	} else {
+	  passed = t.checkExpect(new Game2(new Player (new Posn (randX,randY),"right",0,0,0,25),
+					   new WeaponNode(new Weapon(false,
+								     new Posn(randWX,randWY),
+								     new Posn (0,0),
+								     "ET","left"), new noWeapon()),
+					   new noEnemy(),
+					   Stage1Platforms,
+					   new Background("Stage1")).hit(),
+				 new Game2(new Player (new Posn (randX,randY),"right",0,0,0,25),
+					   new WeaponNode(new Weapon(false,
+								     new Posn(randWX,randWY),
+								     new Posn (0,0),
+								     "ET","left"), new noWeapon()),
+					   new noEnemy(),
+					   Stage1Platforms,
+					   new Background("Stage1")),
+				 "Test Hit Detection - Player Missed");
+	}
+      } else {
+	if (Math.abs(randX-randWX) < 15 && Math.abs(randY - randWY) < 20){
+	  passed = t.checkExpect(new Game2(new Player (new Posn (randX,randY),"right",0,0,0,25),
+					   new noWeapon(),
+					   new EnemyNode(new ET (new Posn (randWX,randWY),
+								 "left",0,5),
+							 new EnemyNode(new ET (new Posn (450, 190),
+									       "left",0,5),
+								       new noEnemy())),
+					   Stage1Platforms,
+					   new Background("Stage1")).hit(),
+				 new Game2(new Player (new Posn (randX,randY),"right",0,0,0,24),
+					   new noWeapon(),
+					   new EnemyNode(new ET (new Posn (randWX,randWY),
+								 "left",0,4),
+							 new EnemyNode(new ET (new Posn (450, 190),
+									       "left",0,5),
+								       new noEnemy())),
+					   Stage1Platforms,
+					   new Background("Stage1")),
+				 "Test Hit Detection - Player/Enemy Contact");
+	} else {
+	  passed = t.checkExpect(new Game2(new Player (new Posn (randX,randY),"right",0,0,0,25),
+					   new noWeapon(),
+					   new EnemyNode(new ET (new Posn (randWX,randWY),
+								 "left",0,5),
+							 new EnemyNode(new ET (new Posn (450, 190),
+									       "left",0,5),
+								       new noEnemy())),
+					   Stage1Platforms,
+					   new Background("Stage1")).hit(),
+				 new Game2(new Player (new Posn (randX,randY),"right",0,0,0,25),
+					   new noWeapon(),
+					   new EnemyNode(new ET (new Posn (randWX,randWY),
+								 "left",0,4),
+							 new EnemyNode(new ET (new Posn (450, 190),
+									       "left",0,5),
+								       new noEnemy())),
+					   Stage1Platforms,
+					   new Background("Stage1")),
+				 "Test Hit Detection - Player/Enemy No Contact");
+	}
+      }
+    }
+    return passed;
+  }
+  boolean testSwitchStage(Tester t){
+    boolean passed = false;
+    for (int i = 0; i < 500; i++){
+      
+      Random randomStage = new Random();
+      int randStage = randomStage.nextInt(6);
+      Random randomX = new Random();
+      int randX = randomX.nextInt(701);
+      Random randomY = new Random();
+      int randY = randomX.nextInt(251);
+
+      if (randStage == 0){
+	if (randX > 690){
+	  passed = t.checkExpect(new Game2(new Player (new Posn (randX,randY),"right",0,0,0,25),
+					   new noWeapon(),
+					   new noEnemy(),
+					   Stage1Platforms,
+					   new Background("Stage1")).onTick(),
+				 Stage2,
+				 "Stage 1 - Switch");
+	} else {
+	  passed = t.checkExpect(new Game2(new Player (new Posn (randX,randY),"right",0,0,0,25),
+					   new noWeapon(),
+					   new noEnemy(),
+					   Stage1Platforms,
+					   new Background("Stage1")).onTick(),
+				 new Game2(new Player (new Posn (randX,randY),"right",0,0,0,25),
+					   new noWeapon(),
+					   new noEnemy(),
+					   Stage1Platforms,
+					   new Background("Stage1")).gravity(),
+				 "Stage 1 - Stay");
+	}
+      } else if (randStage == 1){
+	if (randX > 690){
+	  passed = t.checkExpect(new Game2(new Player (new Posn (randX,randY),"right",0,0,0,25),
+					   new noWeapon(),
+					   new noEnemy(),
+					   Stage2Platforms,
+					   new Background("Stage2")).onTick(),
+				 StageR,
+				 "Stage 2 - Switch");
+	} else {
+	  passed = t.checkExpect(new Game2(new Player (new Posn (randX,randY),"right",0,0,0,25),
+					   new noWeapon(),
+					   new noEnemy(),
+					   Stage2Platforms,
+					   new Background("Stage2")).onTick(),
+				 new Game2(new Player (new Posn (randX,randY),"right",0,0,0,25),
+					   new noWeapon(),
+					   new noEnemy(),
+					   Stage2Platforms,
+					   new Background("Stage2")).gravity(),
+				 "Stage 2 - Stay");
+	}
+      } else if (randStage == 2){
+	if (randX > 690){
+	  passed = t.checkExpect(new Game2(new Player (new Posn (randX,randY),"right",0,0,0,25),
+					   new noWeapon(),
+					   new noEnemy(),
+					   StageRPlatforms,
+					   new Background("StageR")).onTick(),
+				 Stage3,
+				 "Stage R - Switch");
+	} else {
+	  passed = t.checkExpect(new Game2(new Player (new Posn (randX,randY),"right",0,0,0,25),
+					   new noWeapon(),
+					   new noEnemy(),
+					   StageRPlatforms,
+					   new Background("StageR")).onTick(),
+				 new Game2(new Player (new Posn (randX,randY),"right",0,0,0,25),
+					   new noWeapon(),
+					   new noEnemy(),
+					   StageRPlatforms,
+					   new Background("StageR")).gravity(),
+				 "Stage R - Stay");
+	}	
+      } else if (randStage == 3){
+	if (randX > 690){
+	  passed = t.checkExpect(new Game2(new Player (new Posn (randX,randY),"right",0,0,0,25),
+					   new noWeapon(),
+					   new noEnemy(),
+					   Stage3Platforms,
+					   new Background("Stage3")).onTick(),
+				 Stage4,
+				 "Stage 3 - Switch");
+	} else {
+	  passed = t.checkExpect(new Game2(new Player (new Posn (randX,randY),"right",0,0,0,25),
+					   new noWeapon(),
+					   new noEnemy(),
+					   Stage3Platforms,
+					   new Background("Stage3")).onTick(),
+				 new Game2(new Player (new Posn (randX,randY),"right",0,0,0,25),
+					   new noWeapon(),
+					   new noEnemy(),
+					   Stage3Platforms,
+					   new Background("Stage3")).gravity(),
+				 "Stage 3 - Stay");
+	}
+      } else if (randStage == 4){
+	if (randX > 690){
+	  passed = t.checkExpect(new Game2(new Player (new Posn (randX,randY),"right",0,0,0,25),
+					   new noWeapon(),
+					   new noEnemy(),
+					   Stage4Platforms,
+					   new Background("Stage4")).onTick(),
+				 StageJ,
+				 "Stage 4 - Switch");
+	} else {
+	  passed = t.checkExpect(new Game2(new Player (new Posn (randX,randY),"right",0,0,0,25),
+					   new noWeapon(),
+					   new noEnemy(),
+					   Stage4Platforms,
+					   new Background("Stage4")).onTick(),
+				 new Game2(new Player (new Posn (randX,randY),"right",0,0,0,25),
+					   new noWeapon(),
+					   new noEnemy(),
+					   Stage4Platforms,
+					   new Background("Stage4")).gravity(),
+				 "Stage 4 - Stay");
+	}
+      } else {
+	passed = t.checkExpect(new Game2(new Player (new Posn (randX,randY),"right",0,0,0,25),
+					   new noWeapon(),
+					   new noEnemy(),
+					   StageJPlatforms,
+					   new Background("StageJ")).onTick(),
+				 new Game2(new Player (new Posn (randX,randY),"right",0,0,0,25),
+					   new noWeapon(),
+					   new noEnemy(),
+					   StageJPlatforms,
+					   new Background("StageJ")).gravity(),
+				 "Stage J - Stay");
+      }     
+    }
+    return passed;
+  }
+  // Runs five hundred tests with random input and a randomly chosen stage
+  boolean testRandomInput(Tester t){
+    
+    boolean passed = false;
+    String[] stringArray;
+    stringArray = new String[39];
+    stringArray[0] = "a";
+    stringArray[1] = "b";
+    stringArray[2] = "c";
+    stringArray[3] = "d";
+    stringArray[4] = "e";
+    stringArray[5] = "f";
+    stringArray[6] = "g";
+    stringArray[7] = "h";
+    stringArray[8] = "i";
+    stringArray[9] = "j";
+    stringArray[10] = "k";
+    stringArray[11] = "l";
+    stringArray[12] = "m";
+    stringArray[13] = "n";
+    stringArray[14] = "o";
+    stringArray[15] = "p";
+    stringArray[16] = "q";
+    stringArray[17] = "r";
+    stringArray[18] = "s";
+    stringArray[19] = "t";
+    stringArray[20] = "u";
+    stringArray[21] = "v";
+    stringArray[22] = "w";
+    stringArray[23] = "x";
+    stringArray[24] = "y";
+    stringArray[25] = "z";
+    stringArray[26] = "up";
+    stringArray[27] = "down";
+    stringArray[28] = "left";
+    stringArray[29] = "right";
+    stringArray[30] = "1";
+    stringArray[31] = "2";
+    stringArray[32] = "3";
+    stringArray[33] = "4";
+    stringArray[34] = "5";
+    stringArray[35] = "6";
+    stringArray[36] = "7";
+    stringArray[37] = "8";
+    stringArray[38] = "9";
+
+    for (int i = 0; i < 500; i++){
+      
+      Random randomInput = new Random();
+      Random randomStage = new Random();
+      int randInput = randomInput.nextInt(39);
+      int randStage = randomStage.nextInt(6);
+      String input = stringArray[randInput];
+
+      if (randStage == 0){
+	if (input.equals("s")){
+	  passed = t.checkExpect(Stage1.onKeyEvent(input),
+				 new Game2(new Player (new Posn (40,132),"right",0,1,0,25).move(input),
+					   new WeaponNode(new Weapon(true,
+								     new Posn(45,
+									      139),
+								     new Posn (0,0),
+								     "Buster","right"), new noWeapon()).move(),
+					   new EnemyNode(new ET (new Posn (300,190),
+								 "left",0,5),
+					   new EnemyNode(new ET (new Posn (450, 190),
+								 "left",0,5),
+							 new noEnemy())),
+					   Stage1Platforms,
+					   new Background("Stage1")).gravity().hit(),
+				 "Test Random Input - Stage1. Input: " + input);
+
+	} else {
+	  passed = t.checkExpect(Stage1.onKeyEvent(input),
+				 new Game2(new Player (new Posn (40,132),"right",0,0,0,25).move(input),
+					   new noWeapon(),
+					   new EnemyNode(new ET (new Posn (300,190),
+								 "left",0,5),
+					   new EnemyNode(new ET (new Posn (450, 190),
+								 "left",0,5),
+							 new noEnemy())),
+					   Stage1Platforms,
+					   new Background("Stage1")).gravity().hit(),
+				 "Test Random Input - Stage1. Input: " + input);
+	}
+      } else if (randStage == 1){
+	if (input.equals("s")){
+	  passed = t.checkExpect(Stage2.onKeyEvent(input),
+				 new Game2(new Player (new Posn (10,190),"right",0,0,0,25).move(input),
+					   new WeaponNode(new Weapon(true,
+								     new Posn(15,197),
+								     new Posn (0,0),
+								     "Buster","right"), new noWeapon()).move(),
+					   new EnemyNode(new ET (new Posn (300,190),
+								 "left",0,5),
+					   new EnemyNode(new ET (new Posn (500, 190),
+								 "left",0,5),
+							 new noEnemy())),
+					   Stage2Platforms,
+					   new Background("Stage2")).gravity().hit(),
+				 "Test Random Input - Stage 2. Input: " + input);
+	} else {
+	  passed = t.checkExpect(Stage2.onKeyEvent(input),
+				 new Game2(new Player (new Posn (10,190),"right",0,0,0,25).move(input),
+					   new noWeapon(),
+					   new EnemyNode(new ET (new Posn (300,190),
+								 "left",0,5),
+					   new EnemyNode(new ET (new Posn (500, 190),
+								 "left",0,5),
+							 new noEnemy())),
+					   Stage2Platforms,
+					   new Background("Stage2")).gravity().hit(),
+				 "Test Random Input - Stage 2. Input: " + input);
+	}
+      } else if (randStage == 2){
+	if (input.equals("s")){
+	  passed = t.checkExpect(StageR.onKeyEvent(input),
+				 new Game2(new Player (new Posn (10,97),"right",0,0,0,25).move(input),
+					   new WeaponNode(new Weapon(true,
+								     new Posn(15,104),
+								     new Posn (0,0),
+								     "Buster","right"), new noWeapon()).move(),
+					   new EnemyNode(new DrRacket(new Posn(350,125),
+								      false,
+								      "left",
+								      0,
+								      25), new noEnemy()),
+					   StageRPlatforms,
+					   new Background("StageR")).gravity().hit(),
+				 "Test Random Input - Stage R. Input: " + input);
+	} else {
+	  passed = t.checkExpect(StageR.onKeyEvent(input),
+				 new Game2(new Player (new Posn (10,97),"right",0,0,0,25).move(input),
+					   new noWeapon(),
+					   new EnemyNode(new DrRacket(new Posn(350,125),
+								      false,
+								      "left",
+								      0,
+								      25), new noEnemy()),
+					   StageRPlatforms,
+					   new Background("StageR")).gravity().hit(),
+				 "Test Random Input - Stage R. Input: " + input);
+	}
+      } else if (randStage == 3){
+	if (input.equals("s")){
+	  passed = t.checkExpect(Stage3.onKeyEvent(input),
+				 new Game2(new Player (new Posn (20,135),"right",0,0,0,25).move(input),
+					   new WeaponNode(new Weapon(true,
+								     new Posn(25,142),
+								     new Posn (0,0),
+								     "Buster","right"), new noWeapon()).move(),
+					   new EnemyNode(new ET (new Posn (251,158),
+								 "left",0,5),
+					   new EnemyNode(new ET (new Posn (485,174),
+								 "left",0,5),
+					   new EnemyNode(new ET (new Posn(550,142),
+								 "left",0,5),
+					   new EnemyNode(new ET (new Posn(610,158),
+								 "left",0,5),						   
+							 new noEnemy())))),
+					   Stage3Platforms,
+					   new Background("Stage3")).gravity().hit(),
+				 "Test Random Input - Stage 3. Input: " + input);
+	} else {
+	  passed = t.checkExpect(Stage3.onKeyEvent(input),
+				 new Game2(new Player (new Posn (20,135),"right",0,0,0,25).move(input),
+					   new noWeapon(),
+					   new EnemyNode(new ET (new Posn (251,158),
+								 "left",0,5),
+					   new EnemyNode(new ET (new Posn (485,174),
+								 "left",0,5),
+					   new EnemyNode(new ET (new Posn(550,142),
+								 "left",0,5),
+					   new EnemyNode(new ET (new Posn(610,158),
+								 "left",0,5),						   
+							 new noEnemy())))),
+					   Stage3Platforms,
+					   new Background("Stage3")).gravity().hit(),
+				 "Test Random Input - Stage 3. Input: " + input);
+	}
+      } else if (randStage == 4){
+	if (input.equals("s")){
+	  passed = t.checkExpect(Stage4.onKeyEvent(input),
+				 new Game2(new Player (new Posn (20,158),"right",0,0,0,25).move(input),
+					   new WeaponNode(new Weapon(true,
+								     new Posn(25,165),
+								     new Posn (0,0),
+								     "Buster","right"), new noWeapon()).move(),
+					   new noEnemy(),
+					   Stage4Platforms,
+					   new Background("Stage4")).gravity().hit(),
+				 "Test Random Input - Stage 4. Input: " + input);
+	} else {
+	  passed = t.checkExpect(Stage4.onKeyEvent(input),
+				 new Game2(new Player (new Posn (20,158),"right",0,0,0,25).move(input),
+					   new noWeapon(),
+					   new noEnemy(),
+					   Stage4Platforms,
+					   new Background("Stage4")).gravity().hit(),
+				 "Test Random Input - Stage 4. Input: " + input);
+	}
+      } else {
+	if (input.equals("s")){
+	  passed = t.checkExpect(StageJ.onKeyEvent(input),
+				 new Game2(new Player (new Posn (10,158),"right",0,0,0,25).move(input),
+					   new WeaponNode(new Weapon(true,
+								     new Posn(15,165),
+								     new Posn (0,0),
+								     "Buster","right"), new noWeapon()).move(),
+					   new EnemyNode(new J(new Posn(550,75),
+							       false,
+							       "left",
+							       0,
+							       50), new noEnemy()),
+					   StageJPlatforms,
+					   new Background("StageJ")).gravity().hit(),
+				 "Test Random Input - Stage J. Input: " + input);
+	} else {
+	  passed = t.checkExpect(StageJ.onKeyEvent(input),
+				 new Game2(new Player (new Posn (10,158),"right",0,0,0,25).move(input),
+					   new noWeapon(),
+					   new EnemyNode(new J(new Posn(550,75),
+							       false,
+							       "left",
+							       0,
+							       50), new noEnemy()),
+					   StageJPlatforms,
+					   new Background("StageJ")).gravity().hit(),
+				 "Test Random Input - Stage J. Input: " + input);
+	}
+      }
+    }
+    return passed;
+  }
+  /*
+  boolean testRandomOnTick(Tester t){
+    
+    String[] stringArray;
+    stringArray = new String[5];
+    stringArray[0] = "s";
+    stringArray[1] = "up";
+    stringArray[2] = "down";
+    stringArray[3] = "left";
+    stringArray[4] = "right";
+    boolean passed = false;
+    Game2 currGame;
+    Game2 prevGame;
+    
+    for (int j = 0; j < 50; j++){
+      
+      Random randomStage = new Random();
+      int randStage = randomStage.nextInt(6);
+      Random randomX = new Random();
+      int randX = randomX.nextInt(701);
+      Random randomY = new Random();
+      int randY = randomX.nextInt(251);
+
+      if (randStage == 0){
+	currGame = Stage1;
+	for (int i = 0; i < 50; i++){
+	  
+	  Random randomInput = new Random();
+	  int randInput = randomInput.nextInt(5);
+	  String input = stringArray[randInput];
+	  Random randomInt = new Random();
+	  int randInt = randomX.nextInt(2);
+	  prevGame = currGame;
+	  
+	  if (randInt==0){
+	    currGame = (Game2)currGame.onTick();
+	    passed = t.checkExpect(prevGame.onTick(),
+				   currGame,
+				   "Test onTick - Stage1 on tick " + i);
+	  } else {
+	    currGame = (Game2)currGame.onKeyEvent(input);
+	    passed = t.checkExpect(prevGame.onKeyEvent(input),
+				   currGame,
+				   "Test onTick - Stage1 on key event " + i);
+	  }				 
+	}
+      } else if (randStage == 1){
+	currGame = Stage2;
+	for (int i = 0; i < 50; i++){
+	  
+	  Random randomInput = new Random();
+	  int randInput = randomInput.nextInt(5);
+	  String input = stringArray[randInput];
+	  Random randomInt = new Random();
+	  int randInt = randomX.nextInt(2);
+	  prevGame = currGame;
+	  
+	  if (randInt==0){
+	    currGame = (Game2)currGame.onTick();
+	    passed = t.checkExpect(prevGame.onTick(),
+				   currGame,
+				   "Test onTick - Stage2 on tick " + i);
+	  } else {
+	    currGame = (Game2)currGame.onKeyEvent(input);
+	    passed = t.checkExpect(prevGame.onKeyEvent(input),
+				   currGame,
+				   "Test onTick - Stage2 on key event " + i);
+	  }				 
+	}
+      } else if (randStage == 2){
+	currGame = StageR;
+	for (int i = 0; i < 50; i++){
+	  
+	  Random randomInput = new Random();
+	  int randInput = randomInput.nextInt(5);
+	  String input = stringArray[randInput];
+	  Random randomInt = new Random();
+	  int randInt = randomX.nextInt(2);
+	  prevGame = currGame;
+	  
+	  if (randInt==0){
+	    currGame = (Game2)currGame.onTick();
+	    passed = t.checkExpect(prevGame.onTick(),
+				   currGame,
+				   "Test onTick - StageR on tick " + i);
+	  } else {
+	    currGame = (Game2)currGame.onKeyEvent(input);
+	    passed = t.checkExpect(prevGame.onKeyEvent(input),
+				   currGame,
+				   "Test onTick - StageR on key event " + i);
+	  }				 
+	}
+      } else if (randStage == 3){
+	currGame = Stage3;
+	for (int i = 0; i < 50; i++){
+	  
+	  Random randomInput = new Random();
+	  int randInput = randomInput.nextInt(5);
+	  String input = stringArray[randInput];
+	  Random randomInt = new Random();
+	  int randInt = randomX.nextInt(2);
+	  prevGame = currGame;
+	  
+	  if (randInt==0){
+	    currGame = (Game2)currGame.onTick();
+	    passed = t.checkExpect(prevGame.onTick(),
+				   currGame,
+				   "Test onTick - Stage3 on tick " + i);
+	  } else {
+	    currGame = (Game2)currGame.onKeyEvent(input);
+	    passed = t.checkExpect(prevGame.onKeyEvent(input),
+				   currGame,
+				   "Test onTick - Stage3 on key event " + i);
+	  }				 
+	}
+      } else if (randStage == 4){
+	currGame = Stage4;
+	for (int i = 0; i < 50; i++){
+	  
+	  Random randomInput = new Random();
+	  int randInput = randomInput.nextInt(5);
+	  String input = stringArray[randInput];
+	  Random randomInt = new Random();
+	  int randInt = randomX.nextInt(2);
+	  prevGame = currGame;
+	  
+	  if (randInt==0){
+	    currGame = (Game2)currGame.onTick();
+	    passed = t.checkExpect(prevGame.onTick(),
+				   currGame,
+				   "Test onTick - Stage4 on tick " + i);
+	  } else {
+	    currGame = (Game2)currGame.onKeyEvent(input);
+	    passed = t.checkExpect(prevGame.onKeyEvent(input),
+				   currGame,
+				   "Test onTick - Stage4 on key event " + i);
+	  }				 
+	}
+      } else {
+	currGame = StageJ;
+	for (int i = 0; i < 50; i++){
+	  
+	  Random randomInput = new Random();
+	  int randInput = randomInput.nextInt(5);
+	  String input = stringArray[randInput];
+	  Random randomInt = new Random();
+	  int randInt = randomX.nextInt(2);
+	  prevGame = currGame;
+	  
+	  if (randInt==0){
+	    currGame = (Game2)currGame.onTick();
+	    passed = t.checkExpect(prevGame.onTick(),
+				   currGame,
+				   "Test onTick - StageJ on tick " + i);
+	  } else {
+	    currGame = (Game2)currGame.onKeyEvent(input);
+	    passed = t.checkExpect(prevGame.onKeyEvent(input),
+				   currGame,
+				   "Test onTick - StageJ on key event " + i);
+	  }				 
+	}
+      }     
+    }
+    return passed;
+  }*/
+  public static void main(String[] args){
+    AdventureTest testAll = new AdventureTest();
+    Tester.runReport(testAll, false, false);
   }
 }
-
