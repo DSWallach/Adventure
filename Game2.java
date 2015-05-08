@@ -45,52 +45,20 @@ class Background{
     }
   }
 }
-    
-interface LoI{
-  public int numHere();
-  public LoI setNext(LoI next);
-  public LoI getNext();
-}
-class noInt implements LoI{
-  public int numHere(){
-    return -1;
-  }
-  public LoI setNext(LoI next){
-    return next;
-  }
-  public LoI getNext(){
-    return null;
-  }
-}
-class IntNode implements LoI{
-  int num;
-  LoI next;
-  IntNode(int num, LoI next){
-    this.num = num;
-    this.next = next;
-  }  
-  public int numHere() {
-    return this.num;
-  }
-  public LoI setNext(LoI next){
-    return new IntNode(this.num, next);
-  }
-  public LoI getNext(){
-    return this.next;
-  }
-}
+
 interface LoE{
   public boolean enemyHere();
   public int num();
   public Enemy getEnemy();
   public Posn enemyLoc();
-  public LoI active(LoI command, Posn pLoc);
   public LoE getNext();
   public LoE setFirst(Enemy enemy);
   public LoE setEnemy(Enemy enemy);
   public LoE setNext(LoE next);
-  public LoE damage(Enemy enemy);
+  public LoE damage(LoE Enemies);
   public LoE attack(Enemy enemy, String dir);
+  public LoE listAttack(LoE enemies);
+  public LoE addLast(LoE enemies);
   public WorldImage listDraw(WorldImage base);
 }
 
@@ -110,11 +78,8 @@ class noEnemy implements LoE{
   public Enemy getEnemy(){
     return null;
   }
-  public LoI active(LoI command, Posn pLoc){
-    return command;
-  }
   public LoE getNext(){
-    return null;
+    return this;
   }
   public LoE setFirst(Enemy enemy){
     return new EnemyNode (enemy, new noEnemy());
@@ -125,11 +90,17 @@ class noEnemy implements LoE{
   public LoE setNext(LoE next){
     return next;
   }
-  public LoE damage(Enemy enemy){
+  public LoE damage(LoE enemies){
+    return this;
+  }
+  public LoE listAttack(LoE enemies){
     return this;
   }
   public LoE attack(Enemy enemy, String dir){
     return this;
+  }
+  public LoE addLast(LoE enemies){
+    return enemies;
   }
   public WorldImage listDraw(WorldImage base){
     return base;
@@ -156,9 +127,6 @@ class EnemyNode implements LoE{
   public Enemy getEnemy(){
     return e;
   }
-  public LoI active(LoI command, Posn pLoc){
-    return new IntNode(this.getEnemy().attack(pLoc), this.n.active(command, pLoc));
-  }
   public LoE getNext(){
     return n;
   }
@@ -171,38 +139,49 @@ class EnemyNode implements LoE{
   public LoE setNext(LoE next){
     return new EnemyNode(this.e, next);
   }
-  public LoE damage(Enemy enemy){
-    if(this.e==enemy){
-      if (this.e.health() > 1){
-	if (this.e.type().equals("ET")){
-	  return this.setEnemy (new ET(this.e.center(),
+  public LoE addLast(LoE enemies){
+    return new EnemyNode(this.e,this.n.addLast(enemies));
+  }
+  public LoE listAttack(LoE enemies){
+    return this.attack(enemies.getEnemy(),
+			   enemies.getEnemy().facing()).addLast(
+			 this.n.listAttack(enemies.getNext()));
+  }
+  public LoE damage(LoE enemies){
+    LoE currEnemy = enemies;
+    for (int i = 0;i<enemies.num();i++){     
+      if(this.e==currEnemy.getEnemy()){
+	if (this.e.health() > 1){
+	  if (this.e.type().equals("ET")){
+	    return this.setEnemy (new ET(this.e.center(),
+					 this.e.facing(),
+					 this.e.shooting(),
+					 this.e.health()-1));
+	  } else if (this.e.type().equals("DrRacket")){	  
+	    return this.setEnemy (new DrRacket(this.e.center(),
+					       this.e.floating(),
+					       this.e.facing(),
+					       this.e.shooting(),
+					       this.e.health()-1));
+	  } else if (this.e.type().equals("JMin")){
+	    return this.setEnemy(new JMin(this.e.center(),
+					  this.e.facing(),
+					  this.e.shooting(),
+					  this.e.health()-1));
+	  } else {
+	    return this.setEnemy(new J(this.e.center(),
+				       this.e.floating(),
 				       this.e.facing(),
 				       this.e.shooting(),
 				       this.e.health()-1));
-	} else if (this.e.type().equals("DrRacket")){	  
-	  return this.setEnemy (new DrRacket(this.e.center(),
-					     this.e.floating(),
-					     this.e.facing(),
-					     this.e.shooting(),
-					     this.e.health()-1));
-	} else if (this.e.type().equals("JMin")){
-	  return this.setEnemy(new JMin(this.e.center(),
-					this.e.facing(),
-					this.e.shooting(),
-					this.e.health()-1));
+	  }
 	} else {
-	  return this.setEnemy(new J(this.e.center(),
-				     this.e.floating(),
-				     this.e.facing(),
-				     this.e.shooting(),
-				     this.e.health()-1));
+	  return n;
 	}
-      } else {
-	return n;
-      }
-    } else {
-      return new EnemyNode(this.e, this.n.damage(enemy));
+      } 
+      currEnemy = currEnemy.getNext();
     }
+    return new EnemyNode(this.e, this.n.damage(currEnemy));
   }
   public LoE attack(Enemy enemy, String dir){
     if(enemy.type().equals("DrRacket") && this.e==enemy){
@@ -260,9 +239,7 @@ interface Enemy {
   public Posn center();
   public String type();
   public String facing();
-  public int attack(Posn pLoc);
   public boolean floating();
-  public Enemy AI(Posn pLoc);
   public Enemy move(String dir);
   public int health();
   public int shooting();
@@ -292,9 +269,6 @@ class JMin implements Enemy {
   public boolean floating(){
     return false;
   }
-  public Enemy AI(Posn pLoc){
-    return this;
-  }
   public Enemy move(String dir){
     if (this.shooting==11){
       return new JMin(this.center,
@@ -320,9 +294,6 @@ class JMin implements Enemy {
   }
   public int shooting(){
     return this.shooting;
-  }
-  public int attack(Posn pLoc){
-    return 0;
   }
   public String facing(){
     return this.facing;
@@ -370,9 +341,6 @@ class ET implements Enemy {
   public Enemy move(String dir){
     return this;
   }
-  public Enemy AI(Posn pLoc){
-    return this;
-  }
   public int health(){
     return this.health;
   }
@@ -381,19 +349,6 @@ class ET implements Enemy {
   }
   public String facing(){
     return this.facing;
-  }
-  public int attack(Posn pLoc){
-    if (Math.abs(pLoc.y - this.center.y)<50){
-      if (0 < (pLoc.x - this.center.x) &&
-	  (pLoc.x - this.center.x) < 160){
-	if (this.shooting()>0){
-	  return 0;
-	} else {
-	  return 1;
-	}
-      }
-    }
-    return 0;
   }
   public OverlayImages enemyDraw(){
     if (this.facing.equals("right")){
@@ -444,11 +399,6 @@ class DrRacket implements Enemy {
   public String facing(){
     return this.facing;
   }
-  public int attack(Posn pLoc){
-    Random randomInt = new Random();
-    int rand = randomInt.nextInt(2);
-    return rand;
-  }
   public Enemy move(String dir){
     int dif = 3;
     
@@ -491,9 +441,6 @@ class DrRacket implements Enemy {
     } else {
       return this;
     }
-  }
-  public Enemy AI(Posn pLoc){
-    return this;
   }
   public OverlayImages enemyDraw(){
     OverlayImages healthBar = new OverlayImages(new RectangleImage(new Posn(675, 125),
@@ -583,9 +530,6 @@ class J implements Enemy {
       return this;
     }
   }
-  public Enemy AI(Posn pLoc){
-    return this;
-  }
   public int health(){
     return this.health;
   }
@@ -594,17 +538,6 @@ class J implements Enemy {
   }
   public String facing(){
     return this.facing;
-  }
-  public int attack(Posn pLoc){
-    Random newRandom = new Random();
-    int rand = newRandom.nextInt(100);
-    if (rand < 20){
-      return 0;
-    } else if (rand < 60){
-      return 1;
-    } else {
-      return 2;
-    }
   }
   public OverlayImages enemyDraw(){
     return new OverlayImages(new OverlayImages(new FromFileImage(this.center, "JMech.PNG"),
@@ -623,9 +556,11 @@ interface LoW{
   public Weapon getWeapon();
   public LoW move();
   public LoW getNext();
+  public LoW add(LoW weapons);
+  public LoW addLast(LoW weapons);
   public LoW setWeapon(Weapon w);
   public LoW setNext(LoW n);
-  public LoW remove(Weapon w);
+  public LoW remove(LoW weapons);
   public LoW cutTail(Weapon w);
   public LoW eShoot(Posn e, Posn aim, String dir, String type);
   public LoW eShoot(Posn e, String dir,String type);
@@ -658,8 +593,14 @@ class noWeapon implements LoW{
   public LoW setNext(LoW n){
     return n;
   }
-  public LoW remove(Weapon w){
+  public LoW remove(LoW weapons){
     return this;
+  }
+  public LoW add(LoW weapons){
+    return weapons;
+  }
+  public LoW addLast(LoW weapons){
+    return weapons;
   }
   public LoW cutTail(Weapon w){
     return this;
@@ -777,12 +718,21 @@ class WeaponNode implements LoW{
   public LoW setNext(LoW n){
     return new WeaponNode(this.w, n);
   }
-  public LoW remove(Weapon w){
-    if(this.w==w){
-      return this.getNext();
-    } else {
-      return new WeaponNode(this.w,this.n.remove(w));
+  public LoW add(LoW weapons){
+    return weapons.addLast(this);
+  }
+  public LoW addLast(LoW weapons){
+    return this.n.addLast(weapons);
+  }
+  public LoW remove(LoW weapons){
+    LoW currWeapon = weapons;
+    for (int i = 0;i<weapons.num();i++){
+      if(this.w==currWeapon.getWeapon()){
+	return this.getNext();
+      }
+      currWeapon = currWeapon.getNext();
     }
+    return new WeaponNode(this.w,this.n.remove(weapons));
   }
   public LoW cutTail(Weapon w){
     if (this.w==w){
@@ -1489,250 +1439,86 @@ class Game2 extends World {
     Posn pLoc = this.player.center;
     Random newRandom = new Random();
     int rand = newRandom.nextInt(100);
-    if (currEnemy.getEnemy().shooting()<1 && rand < 50 ){
-      return new Game2(this.player,
-		       this.low,
-		       this.loe.setEnemy(currEnemy.getEnemy().move("float")),
-		       this.lop,
-		       this.back).LoWClean();
-    } else if (currEnemy.getEnemy().shooting()<1){
-      return new Game2(this.player,
-		       this.low,
-		       this.loe.setEnemy(currEnemy.getEnemy().move("land")),
-		       this.lop,
-		       this.back);    
-    } else if (currEnemy.getEnemy().floating()){
-       if (currEnemy.getEnemy().center().y>this.player.center.y-100){
-	return new Game2(this.player,
-			 this.low,
-			 this.loe.setEnemy(currEnemy.getEnemy().move("up")),
-			 this.lop,
-			 this.back);
-      } else {
-	if (currEnemy.getEnemy().center().x>pLoc.x &&
-	    (currEnemy.getEnemy().shooting() % 2 == 0)){
-	  return new Game2(this.player,
-			   this.low.eShoot(eLoc,"left","Fireball"),
-			   this.loe.attack(currEnemy.getEnemy(),
-					   "left"),
-			   this.lop,
-			   this.back);
-	} else if (currEnemy.getEnemy().shooting() % 2 == 0) {
-	  return new Game2(this.player,
-			   this.low.eShoot(eLoc,"right","Fireball"),
-			   this.loe.attack(currEnemy.getEnemy(),
-					   "right"),
-			   this.lop,
-			   this.back);
-	} else {
+    for(int i = 0; i<this.loe.num();i++){
+      if(currEnemy.getEnemy().type().equals("DrRacket")){
+	if (currEnemy.getEnemy().shooting()<1 && rand < 50 ){
 	  return new Game2(this.player,
 			   this.low,
-			   this.loe.attack(currEnemy.getEnemy(),
-					   currEnemy.getEnemy().facing()),
+			   this.loe.setEnemy(currEnemy.getEnemy().move("float")),
 			   this.lop,
-			   this.back);
-	}
-      }
-    } else {
-      if (currEnemy.getEnemy().center().y<this.player.center.y-25){
-	return new Game2(this.player,
-			 this.low,
-			 this.loe.setEnemy(currEnemy.getEnemy().move("down")),
-			 this.lop,
-			 this.back);
-      } else if (currEnemy.getEnemy().center().y>this.player.center.y){
-	return new Game2(this.player,
-			 this.low,
-			 this.loe.setEnemy(currEnemy.getEnemy().move("up")),
-			 this.lop,
-			 this.back);
-      } else {
-	if (currEnemy.getEnemy().center().x>pLoc.x &&
-	    (currEnemy.getEnemy().shooting() % 2 == 0)){
-	  return new Game2(this.player,
-			   this.low.eShoot(eLoc,"left","Lambda"),
-			   this.loe.attack(currEnemy.getEnemy(),
-					   "left"),
-			   this.lop,
-			   this.back);
-	} else if (currEnemy.getEnemy().shooting() % 2 == 0) {
-	  return new Game2(this.player,
-			   this.low.eShoot(eLoc,"right","Lambda"),
-			   this.loe.attack(currEnemy.getEnemy(),
-					   "right"),
-			   this.lop,
-			   this.back);
-	} else {
+			   this.back).LoWClean();
+	} else if (currEnemy.getEnemy().shooting()<1){
 	  return new Game2(this.player,
 			   this.low,
-			   this.loe.attack(currEnemy.getEnemy(),
-					   currEnemy.getEnemy().facing()),
+			   this.loe.setEnemy(currEnemy.getEnemy().move("land")),
 			   this.lop,
-			   this.back);
-	}
-      }
-    }
-  }
-  public Game2 JAI(){
- 
-    Enemy currEnemy = this.loe.getEnemy();
-    Posn eLoc = this.loe.enemyLoc();
-    Posn pLoc = this.player.center;
-    Random newRandom = new Random();
-    int rand = newRandom.nextInt(100);
-    if (currEnemy.shooting()==75 && currEnemy.center().x > 550){
-      return new Game2 (this.player,
-			this.low,
-			this.loe.setEnemy(new J(currEnemy.center(),
-						currEnemy.floating(),
-						currEnemy.facing(),
-						0,
-						currEnemy.health())),
-			this.lop,
-			this.back);
-    } else if (currEnemy.center().x < 100 || currEnemy.shooting()==75){
-      return new Game2(this.player,
-		       this.low,
-		       this.loe.setEnemy(new J(new Posn (currEnemy.center().x+5,
-							 currEnemy.center().y),
-						currEnemy.floating(),
-						currEnemy.facing(),
-						75,
-						currEnemy.health())),
-		       this.lop,
-		       this.back);
-    } else if (currEnemy.shooting()<1){
-      if (rand < 20){
-	return new Game2(this.player,
-			 this.low,
-			 this.loe.setEnemy(new J(currEnemy.center(),
-						 currEnemy.floating(),
-						 currEnemy.facing(),
-						 75,
-						 currEnemy.health())).setFirst(new JMin(new Posn(680,179),
-											"left",
-											0,
-											2)),
-			 this.lop,
-			 this.back);
-      } else if(rand < 60){
-	return new Game2(this.player,
-			 this.low,
-			 this.loe.setEnemy(new J(currEnemy.center(),
-						 true,
-						 currEnemy.facing(),
-						 currEnemy.shooting()+1,
-						 currEnemy.health())),
-			 this.lop,
-			 this.back);
-      } else {
-	return new Game2(this.player,
-			 this.low,
-			 this.loe.setEnemy(new J(currEnemy.center(),
-						 false,
-						 currEnemy.facing(),
-						 currEnemy.shooting()+1,
-						 currEnemy.health())),
-			 this.lop,
-			 this.back);
-      }
-    }  else if (currEnemy.floating()){
-      if (currEnemy.shooting() % 2 == 0){
-	return new Game2(this.player,
-			 this.low.eShoot(eLoc,"left","Jball"),
-			 this.loe.setEnemy(currEnemy.move("left")),
-			 this.lop,
-			 this.back);
-
-      } else {
-	return new Game2(this.player,
-			 this.low,
-			 this.loe.setEnemy(currEnemy.move(currEnemy.facing())),
-			 this.lop,
-			 this.back);
-      }      
-    } else {
-      if (currEnemy.shooting() % 10 == 0){
-	return new Game2(this.player,
-			 this.low.eShoot(eLoc, pLoc, "left","Racketball"),
-			 this.loe.setEnemy(new J(currEnemy.center(),
-						 false,
-						 currEnemy.facing(),
-						 currEnemy.shooting()+1,
-						 currEnemy.health())),
-			 this.lop,
-			 this.back);
-      } else {
-	return new Game2(this.player,
-			 this.low,
-			 this.loe.setEnemy(new J(currEnemy.center(),
-						 currEnemy.floating(),
-						 currEnemy.facing(),
-						 currEnemy.shooting()+1,
-						 currEnemy.health())),
-			 this.lop,
-			 this.back);
-      }      
-    }
-  }
-  public Game2 AI(){
-    LoE currEnemy = this.loe;
-    Posn eLoc = currEnemy.enemyLoc();
-    Posn pLoc = this.player.center;
-    for (int i = 0; i<this.loe.num();i++){
-      if (currEnemy.getEnemy().type().equals("DrRacket")){
-	return this.RacketAI();
-      } else if (currEnemy.getEnemy().type().equals("J")){
-	return this.JAI();
-      } else if (currEnemy.getEnemy().type().equals("JMin")){
-	if(eLoc.x < 100 && currEnemy.getEnemy().facing().equals("left")){
-	  return new Game2(this.player,
-			   this.low,
-			   this.loe.setEnemy(currEnemy.getEnemy().move("right")),
-			   this.lop,
-			   this.back);
-	} else if (eLoc.x > 650 && currEnemy.getEnemy().facing().equals("right")){
-	  	  return new Game2(this.player,
-			   this.low,
-			   this.loe.setEnemy(currEnemy.getEnemy().move("left")),
-				   this.lop,
-				   this.back);
-	} else {
-	  return new Game2(this.player,
-			   this.low,
-			   this.loe.setEnemy(currEnemy.getEnemy().move(currEnemy.getEnemy().facing())),
-			   this.lop,
-			   this.back);
-	}
-      } else {
-	if (Math.abs(pLoc.y - eLoc.y)<50){
-	  if (0 < (pLoc.x - eLoc.x) &&
-	      (pLoc.x - eLoc.x) < 160){
-	    if (currEnemy.getEnemy().shooting()>0){
+			   this.back);    
+	} else if (currEnemy.getEnemy().floating()){
+	  if (currEnemy.getEnemy().center().y>this.player.center.y-100){
+	    return new Game2(this.player,
+			     this.low,
+			     this.loe.setEnemy(currEnemy.getEnemy().move("up")),
+			     this.lop,
+			     this.back);
+	  } else {
+	    if (currEnemy.getEnemy().center().x>pLoc.x &&
+		(currEnemy.getEnemy().shooting() % 2 == 0)){
 	      return new Game2(this.player,
-			       this.low,
-			       this.loe.attack(currEnemy.getEnemy(),"right"),
+			       this.low.eShoot(eLoc,"left","Fireball"),
+			       this.loe.attack(currEnemy.getEnemy(),
+					       "left"),
+			       this.lop,
+			       this.back);
+	    } else if (currEnemy.getEnemy().shooting() % 2 == 0) {
+	      return new Game2(this.player,
+			       this.low.eShoot(eLoc,"right","Fireball"),
+			       this.loe.attack(currEnemy.getEnemy(),
+					       "right"),
 			       this.lop,
 			       this.back);
 	    } else {
 	      return new Game2(this.player,
-			       this.low.eShoot(eLoc,"right",currEnemy.getEnemy().type()),
-			       this.loe.attack(currEnemy.getEnemy(),"right"),
+			       this.low,
+			       this.loe.attack(currEnemy.getEnemy(),
+					       currEnemy.getEnemy().facing()),
 			       this.lop,
 			       this.back);
 	    }
-	  } else if (-160 < (pLoc.x - eLoc.x) &&
-		     (pLoc.x - eLoc.x) < 0){
-	    if (currEnemy.getEnemy().shooting()>0){
+	  }
+	} else {
+	  if (currEnemy.getEnemy().center().y<this.player.center.y-25){
+	    return new Game2(this.player,
+			     this.low,
+			     this.loe.setEnemy(currEnemy.getEnemy().move("down")),
+			     this.lop,
+			     this.back);
+	  } else if (currEnemy.getEnemy().center().y>this.player.center.y){
+	    return new Game2(this.player,
+			     this.low,
+			     this.loe.setEnemy(currEnemy.getEnemy().move("up")),
+			     this.lop,
+			     this.back);
+	  } else {
+	    if (currEnemy.getEnemy().center().x>pLoc.x &&
+		(currEnemy.getEnemy().shooting() % 2 == 0)){
 	      return new Game2(this.player,
-			       this.low,
-			       this.loe.attack(currEnemy.getEnemy(),"left"),
+			       this.low.eShoot(eLoc,"left","Lambda"),
+			       this.loe.attack(currEnemy.getEnemy(),
+					       "left"),
+			       this.lop,
+			       this.back);
+	    } else if (currEnemy.getEnemy().shooting() % 2 == 0) {
+	      return new Game2(this.player,
+			       this.low.eShoot(eLoc,"right","Lambda"),
+			       this.loe.attack(currEnemy.getEnemy(),
+					       "right"),
 			       this.lop,
 			       this.back);
 	    } else {
 	      return new Game2(this.player,
-			       this.low.eShoot(eLoc,"left",currEnemy.getEnemy().type()),
-			       this.loe.attack(currEnemy.getEnemy(),"left"),
+			       this.low,
+			       this.loe.attack(currEnemy.getEnemy(),
+					       currEnemy.getEnemy().facing()),
 			       this.lop,
 			       this.back);
 	    }
@@ -1741,9 +1527,191 @@ class Game2 extends World {
       }
       currEnemy = currEnemy.getNext();
       eLoc = currEnemy.enemyLoc();
-      pLoc = this.player.center;
+    }
+    return this;
+  }
+  public Game2 JAI(){    
+      
+    Enemy currEnemy = this.loe.getEnemy();
+    LoE listEnemy = this.loe;
+    Posn eLoc = this.loe.enemyLoc();
+    Posn pLoc = this.player.center;
+    Random newRandom = new Random();
+    int rand = newRandom.nextInt(100);
+    
+    for (int i = 0; i<this.loe.num();i++){
+      if (this.loe.getEnemy().type().equals("J")){
+	if (currEnemy.shooting()==75 && currEnemy.center().x > 550){
+	  return new Game2 (this.player,
+			    this.low,
+			    this.loe.setEnemy(new J(currEnemy.center(),
+						    currEnemy.floating(),
+						    currEnemy.facing(),
+						    0,
+						    currEnemy.health())),
+			    this.lop,
+			    this.back);
+	} else if (currEnemy.center().x < 100 || currEnemy.shooting()==75){
+	  return new Game2(this.player,
+			   this.low,
+			   this.loe.setEnemy(new J(new Posn (currEnemy.center().x+5,
+							     currEnemy.center().y),
+						   currEnemy.floating(),
+						   currEnemy.facing(),
+						   75,
+						   currEnemy.health())),
+			   this.lop,
+			   this.back);
+	} else if (currEnemy.shooting()<1){
+	  if (rand < 20){
+	    return new Game2(this.player,
+			     this.low,
+			     this.loe.setEnemy(new J(currEnemy.center(),
+						     currEnemy.floating(),
+						     currEnemy.facing(),
+						     75,
+						     currEnemy.health())).setFirst(new JMin(new Posn(680,179),
+											    "left",
+											    0,
+											    2)),
+			     this.lop,
+			     this.back);
+	  } else if(rand < 60){
+	    return new Game2(this.player,
+			     this.low,
+			     this.loe.setEnemy(new J(currEnemy.center(),
+						     true,
+						     currEnemy.facing(),
+						     currEnemy.shooting()+1,
+						     currEnemy.health())),
+			     this.lop,
+			     this.back);
+	  } else {
+	    return new Game2(this.player,
+			     this.low,
+			     this.loe.setEnemy(new J(currEnemy.center(),
+						     false,
+						     currEnemy.facing(),
+						     currEnemy.shooting()+1,
+						     currEnemy.health())),
+			     this.lop,
+			     this.back);
+	  }
+	}  else if (currEnemy.floating()){
+	  if (currEnemy.shooting() % 2 == 0){
+	    return new Game2(this.player,
+			     this.low.eShoot(eLoc,"left","Jball"),
+			     this.loe.setEnemy(currEnemy.move("left")),
+			     this.lop,
+			     this.back);
+
+	  } else {
+	    return new Game2(this.player,
+			     this.low,
+			     this.loe.setEnemy(currEnemy.move(currEnemy.facing())),
+			     this.lop,
+			     this.back);
+	  }      
+	} else {
+	  if (currEnemy.shooting() % 10 == 0){
+	    return new Game2(this.player,
+			     this.low.eShoot(eLoc, pLoc, "left","Racketball"),
+			     this.loe.setEnemy(new J(currEnemy.center(),
+						     false,
+						     currEnemy.facing(),
+						     currEnemy.shooting()+1,
+						     currEnemy.health())),
+			     this.lop,
+			     this.back);
+	  } else {
+	    return new Game2(this.player,
+			     this.low,
+			     this.loe.setEnemy(new J(currEnemy.center(),
+						     currEnemy.floating(),
+						     currEnemy.facing(),
+						     currEnemy.shooting()+1,
+						     currEnemy.health())),
+			     this.lop,
+			     this.back);
+	  }      
+	}
       }
-      return this;
+      listEnemy = listEnemy.getNext();
+      eLoc = listEnemy.enemyLoc();
+    }
+    return this;
+  }
+  public Game2 AI(){
+
+    LoW addWeapons = new noWeapon();
+    LoE attackEnemies = new noEnemy();
+    LoE currEnemy = this.loe;
+    Posn eLoc = currEnemy.enemyLoc();
+    Posn pLoc = this.player.center;
+    for (int i = 0; i<this.loe.num();i++){
+      if (currEnemy.getEnemy().type().equals("JMin")){
+	if(eLoc.x < 100 && currEnemy.getEnemy().facing().equals("left")){
+	  attackEnemies = new EnemyNode(new JMin(currEnemy.getEnemy().center(),
+						 "left",
+						 currEnemy.getEnemy().shooting(),
+						 currEnemy.getEnemy().health()), attackEnemies);
+	} else if (eLoc.x > 650 && currEnemy.getEnemy().facing().equals("right")){
+	  attackEnemies = new EnemyNode(new JMin(currEnemy.getEnemy().center(),
+						 "right",
+						 currEnemy.getEnemy().shooting(),
+						 currEnemy.getEnemy().health()), attackEnemies);
+	} else {
+	  attackEnemies = new EnemyNode(currEnemy.getEnemy(), attackEnemies);
+	}
+      } else {
+	if (Math.abs(pLoc.y - eLoc.y)<50){
+	  if (0 < (pLoc.x - eLoc.x) &&
+	      (pLoc.x - eLoc.x) < 160){
+	    if (currEnemy.getEnemy().shooting()>0){
+	      attackEnemies = new EnemyNode(new ET(currEnemy.getEnemy().center(),
+						   "left",
+						   currEnemy.getEnemy().shooting(),
+						   currEnemy.getEnemy().health()), attackEnemies);
+	    } else {
+	      attackEnemies = new EnemyNode(new ET(currEnemy.getEnemy().center(),
+						   "left",
+						   currEnemy.getEnemy().shooting(),
+						   currEnemy.getEnemy().health()), attackEnemies);
+	      addWeapons = new WeaponNode(new Weapon (false,
+						      new Posn (eLoc.x+5,eLoc.y+7),
+						      new Posn (0,0),
+						      "ET",
+						      "left"), addWeapons);
+	    }
+	  } else if (-160 < (pLoc.x - eLoc.x) &&
+		     (pLoc.x - eLoc.x) < 0){
+	    if (currEnemy.getEnemy().shooting()>0){
+	      attackEnemies = new EnemyNode(new ET(currEnemy.getEnemy().center(),
+						   "right",
+						   currEnemy.getEnemy().shooting(),
+						   currEnemy.getEnemy().health()), attackEnemies);
+	    } else {
+	      attackEnemies = new EnemyNode(new ET(currEnemy.getEnemy().center(),
+						   "right",
+						   currEnemy.getEnemy().shooting(),
+						   currEnemy.getEnemy().health()), attackEnemies);
+	      addWeapons = new WeaponNode(new Weapon (false,
+						      new Posn (eLoc.x+5,eLoc.y+7),
+						      new Posn (0,0),
+						      "ET",
+						      "right"), addWeapons);
+	    }
+	  }
+	}
+      }
+      currEnemy = currEnemy.getNext();
+      eLoc = currEnemy.enemyLoc();
+    }
+    return  new Game2(this.player,
+		      this.low.add(addWeapons),
+		      this.loe.listAttack(attackEnemies),
+		      this.lop,
+		      this.back).RacketAI().JAI();
   }
 
   public Game2 LoWClean(){
@@ -1764,148 +1732,119 @@ class Game2 extends World {
     }
     return this;
   }
-    
-  public Game2 hit(){
-    
-    Posn hit = new Posn (100, 100);
-    LoE allEnemy = this.loe;
-    LoE currEnemy = this.loe;
-    LoW currWeapon = this.low;
-    Posn pLoc = this.player.center;
-    Posn wLoc = currWeapon.weaponLoc();
-    Posn eLoc = currEnemy.enemyLoc();
+public Game2 hit(){
+  String contact = "no";
+  int playerDamage = 0;
+  LoE enemiesDamaged = new noEnemy();
+  LoW weaponsRemoved = new noWeapon();
+  Posn hit = new Posn (100, 100);
+  LoE currEnemy = this.loe;
+  LoW currWeapon = this.low;
+  Posn pLoc = this.player.center;
+  Posn wLoc = currWeapon.weaponLoc();
+  Posn eLoc = currEnemy.enemyLoc();
 
-    if (Math.abs(eLoc.x-pLoc.x) < 15 && Math.abs(eLoc.y-pLoc.y) < 20){
-      if (this.player.facing.equals("right")){
-	return new Game2(new Player(new Posn(this.player.center.x-10,
-					     this.player.center.y-10),
-				    this.player.facing,
-				    this.player.running,
-				    this.player.shooting,
-				    this.player.jumping,
-				    this.player.health-1),
-			 this.low,
-			 this.loe,
-			 this.lop,
-			 this.back);
-      } else {
-	return new Game2(new Player(new Posn(this.player.center.x+10,
-					     this.player.center.y-10),
-				    this.player.facing,
-				    this.player.running,
-				    this.player.shooting,
-				    this.player.jumping,
-				    this.player.health-1),
-			 this.low,
-			 this.loe,
-			 this.lop,
-			 this.back);
+  for (int i=0;i<this.low.num();i++){
+    if (!currWeapon.getWeapon().friendly){	
+      hit = new Posn(Math.abs(wLoc.x-pLoc.x),
+		     Math.abs(wLoc.y-pLoc.y));	  
+      if (hit.x < 15 && hit.y < 20){
+	playerDamage++;
+	weaponsRemoved = new WeaponNode(currWeapon.getWeapon(), weaponsRemoved);
       }
     }
-    for (int i=0;i<this.low.num();i++){
-      eLoc = currEnemy.enemyLoc();
-      pLoc = this.player.center;
-      if (!(this.low.getWeapon().friendly)){
-	if(Math.abs(wLoc.x-pLoc.x) < 15 && Math.abs(wLoc.y-pLoc.y) < 20){
-	  return new Game2(new Player(this.player.center,
-				      this.player.facing,
-				      this.player.running,
-				      this.player.shooting,
-				      this.player.jumping,
-				      this.player.health-1),
-			   this.low.remove(currWeapon.getWeapon()),
-			   this.loe,
-			   this.lop,
-			   this.back);
-	} else {
-	  currWeapon = currWeapon.getNext();
-	  wLoc = currWeapon.weaponLoc();
-	}
-      } else {
+    currEnemy = this.loe;
+    eLoc = currEnemy.enemyLoc();
       
-	for (int j=0;j<this.loe.num();j++){
-	  if (Math.abs(eLoc.x-pLoc.x) < 15 && Math.abs(eLoc.y-pLoc.y) < 20){
-	    if (this.player.facing.equals("right")){
-	      return new Game2(new Player(new Posn(this.player.center.x-10,
-						   this.player.center.y-10),
-					  this.player.facing,
-					  this.player.running,
-					  this.player.shooting,
-					  this.player.jumping,
-					  this.player.health-1),
-			       this.low,
-			       this.loe,
-			       this.lop,
-			       this.back);
-	    } else {
-	      return new Game2(new Player(new Posn(this.player.center.x+10,
-						   this.player.center.y-10),
-					  this.player.facing,
-					  this.player.running,
-					  this.player.shooting,
-					  this.player.jumping,
-					  this.player.health-1),
-			       this.low,
-			       this.loe,
-			       this.lop,
-			       this.back);
-	    }
-	  } else {
-	    hit = new Posn(Math.abs(wLoc.x-eLoc.x),
-			   Math.abs(wLoc.y-eLoc.y));
+    for (int j=0;j<this.loe.num();j++){
+      if (Math.abs(eLoc.x-pLoc.x) < 15 &&
+	  Math.abs(eLoc.y-pLoc.y) < 20 &&
+	  this.player.facing.equals("right")){
+	playerDamage++;
+	contact = "right";
+      } else if (Math.abs(eLoc.x-pLoc.x) < 15 &&
+		 Math.abs(eLoc.y-pLoc.y) < 20 &&
+		 this.player.facing.equals("left")){
+	playerDamage++;
+	contact = "left";
+      } else {
+	hit = new Posn(Math.abs(wLoc.x-eLoc.x),
+		       Math.abs(wLoc.y-eLoc.y));
 
-	    if (currEnemy.getEnemy().type().equals("ET")
-		&& (hit.x < 15 && hit.y < 20)){
-	      return new Game2(this.player,
-			       this.low.remove(currWeapon.getWeapon()),
-			       this.loe.damage(currEnemy.getEnemy()),
-			       this.lop,
-			       this.back);
-
-	    } else if (currEnemy.getEnemy().type().equals("DrRacket")
-		       && (hit.x < 15 && hit.y < 50)) {
-	      return new Game2(this.player,
-			       this.low.remove(currWeapon.getWeapon()),
-			       this.loe.damage(currEnemy.getEnemy()),
-			       this.lop,
-			       this.back);
-	    } else if (currEnemy.getEnemy().type().equals("J")
-		       && (hit.x < 15 && hit.y < 50) && allEnemy.num() == 1) {
-	      return new Game2(this.player,
-			       this.low.remove(currWeapon.getWeapon()),
-			       this.loe.damage(currEnemy.getEnemy()),
-			       this.lop,
-			       this.back);
-	    } else if (currEnemy.getEnemy().type().equals("JMin")
-		       && (hit.x < 15 && hit.y < 25)) {
-	      return new Game2(this.player,
-			       this.low.remove(currWeapon.getWeapon()),
-			       this.loe.damage(currEnemy.getEnemy()),
-			       this.lop,
-			       this.back);
-	    }
-	    currEnemy = currEnemy.getNext();
-	    eLoc = currEnemy.enemyLoc();
-	  }
+	if (currEnemy.getEnemy().type().equals("ET")
+	    && (hit.x < 15 && hit.y < 20)){
+	  weaponsRemoved = new WeaponNode(currWeapon.getWeapon(), weaponsRemoved);
+	  enemiesDamaged = new EnemyNode(currEnemy.getEnemy(), enemiesDamaged);
+	} else if (currEnemy.getEnemy().type().equals("DrRacket")
+		   && (hit.x < 15 && hit.y < 50)) {
+	  weaponsRemoved = new WeaponNode(currWeapon.getWeapon(), weaponsRemoved);
+	  enemiesDamaged = new EnemyNode(currEnemy.getEnemy(), enemiesDamaged);
+	} else if (currEnemy.getEnemy().type().equals("J")
+		   && (hit.x < 15 && hit.y < 50)) {
+	  weaponsRemoved = new WeaponNode(currWeapon.getWeapon(), weaponsRemoved);
+	  enemiesDamaged = new EnemyNode(currEnemy.getEnemy(), enemiesDamaged);
+	} else if (currEnemy.getEnemy().type().equals("JMin")
+		   && (hit.x < 15 && hit.y < 25)) {
+	  weaponsRemoved = new WeaponNode(currWeapon.getWeapon(), weaponsRemoved);
+	  enemiesDamaged = new EnemyNode(currEnemy.getEnemy(), enemiesDamaged);
 	}
+	currEnemy = currEnemy.getNext();
+	eLoc = currEnemy.enemyLoc();
       }
-      currWeapon = currWeapon.getNext();
-      wLoc = currWeapon.weaponLoc();
     }
-    return this;
+    currWeapon = currWeapon.getNext();
+    wLoc = currWeapon.weaponLoc();
   }
-    // Defines the initial setup of the game world and begins the game
-    public static void main(String args[]){
+  if (contact.equals("right")){
+    return new Game2(new Player(new Posn(this.player.center.x-10,
+					 this.player.center.y-10),
+				this.player.facing,
+				this.player.running,
+				this.player.shooting,
+				this.player.jumping,
+				this.player.health-playerDamage),
+		     this.low.remove(weaponsRemoved),
+		     this.loe.damage(enemiesDamaged),
+		     this.lop,
+		     this.back);
+  } else if (contact.equals("left")){
+    return new Game2(new Player(new Posn(this.player.center.x+10,
+					 this.player.center.y-10),
+				this.player.facing,
+				this.player.running,
+				this.player.shooting,
+				this.player.jumping,
+				this.player.health-playerDamage),
+		     this.low.remove(weaponsRemoved),
+		     this.loe.damage(enemiesDamaged),
+		     this.lop,
+		     this.back);
+  } else {
+    return new Game2(new Player(this.player.center,
+				this.player.facing,
+				  this.player.running,
+				  this.player.shooting,
+				  this.player.jumping,
+				  this.player.health-playerDamage),
+		       this.low.remove(weaponsRemoved),
+		       this.loe.damage(enemiesDamaged),
+		       this.lop,
+		       this.back);
+    }    
+  }
+  
+// Defines the initial setup of the game world and begins the game
+public static void main(String args[]){
     
-      Game2 Stage1 = new Game2(new Player (new Posn (40,127),"right",0,0,0,25),
-			       new noWeapon(),
-			       new EnemyNode(new ET (new Posn (300,190),
-						     "left",0,5),
-					     new EnemyNode(new ET (new Posn (450, 190),
-								   "left",0,5),
-							   new noEnemy())),
-			       Stage1Platforms,
-			       new Background("Stage1"));
+  Game2 Stage1 = new Game2(new Player (new Posn (40,127),"right",0,0,0,25),
+			   new noWeapon(),
+			   new EnemyNode(new ET (new Posn (300,190),
+						 "left",0,5),
+					 new EnemyNode(new ET (new Posn (450, 190),
+							       "left",0,5),
+						       new noEnemy())),
+			   Stage1Platforms,
+			   new Background("Stage1"));
     
     
       Stage1.bigBang(width, height, 0.05);
@@ -2359,7 +2298,7 @@ class AdventureTest{
   // Runs three hundred tests of the hit() method checking if either the player or an enemy should be damaged
   boolean testHitDetection(Tester t){
     boolean passed = false;
-    for (int i = 0; i < 300; i++){
+    for (int i = 0; i < 500; i++){
 
       Random randomWX = new Random();
       int randWX = randomWX.nextInt(701);
@@ -2377,50 +2316,55 @@ class AdventureTest{
       int randX3 = randomX3.nextInt(701);
       Random randomY3 = new Random();
       int randY3 = randomX3.nextInt(251);
+      Random randomX4 = new Random();
+      int randX4 = randomX4.nextInt(701);
+      Random randomY4 = new Random();
+      int randY4 = randomX4.nextInt(251);
+      Random randomX5 = new Random();
+      int randX5 = randomX5.nextInt(701);
+      Random randomY5 = new Random();
+      int randY5 = randomX5.nextInt(251);
 
       if (Math.abs(randX-randWX) < 15 && Math.abs(randY - randWY) < 20){
-	passed = t.checkExpect(new Game2(new Player (new Posn (40,132),"right",0,0,0,25),
+	passed = t.checkExpect(new Game2(new Player (new Posn (randX-50,randY-50),"right",0,0,0,25),
 					 new WeaponNode(new Weapon(true,
 								   new Posn(randWX,randWY),
 								   new Posn (0,0),
 								   "Buster","right"), new noWeapon()),
 					 new EnemyNode(new ET (new Posn (randX,randY),
 							       "left",0,5),
-						       new EnemyNode(new ET (new Posn (450, 190),
+						       new EnemyNode(new ET (new Posn (randX+50,randY+50),
 									     "left",0,5),
 								     new noEnemy())),
 					 Stage1Platforms,
 					 new Background("Stage1")).hit(),
-			       new Game2(new Player (new Posn (40,132),"right",0,0,0,25),
+			       new Game2(new Player (new Posn (randX-50,randY-50),"right",0,0,0,25),
 					 new noWeapon(),
 					 new EnemyNode(new ET (new Posn (randX,randY),
 							       "left",0,4),
-						       new EnemyNode(new ET (new Posn (450, 190),
+						       new EnemyNode(new ET (new Posn (randX+50,randY+50),
 									     "left",0,5),
 								     new noEnemy())),
 					 Stage1Platforms,
 					 new Background("Stage1")),
 			       "Test Hit Detection - Enemy 1 Hit");
       } else if (Math.abs(randX2-randWX) < 15 && Math.abs(randY2 - randWY) < 20) {
-	passed = t.checkExpect(new Game2(new Player (new Posn (40,132),"right",0,0,0,25),
+	passed = t.checkExpect(new Game2(new Player (new Posn (randX,randY),"right",0,0,0,25),
 					 new WeaponNode(new Weapon(true,
 								   new Posn(randWX,randWY),
 								   new Posn (0,0),
 								   "Buster","right"), new noWeapon()),
-					 new EnemyNode(new ET (new Posn (randX,randY),
+					 new EnemyNode(new ET (new Posn (randX+50,randY+50),
 							       "left",0,5),
 						       new EnemyNode(new ET (new Posn (randX2, randY2),
-									     "left",0,5),
+									     "left",0,1),
 								     new noEnemy())),
 					 Stage1Platforms,
 					 new Background("Stage1")).hit(),
-			       new Game2(new Player (new Posn (40,132),"right",0,0,0,25),
+			       new Game2(new Player (new Posn (randX,randY),"right",0,0,0,25),
 					 new noWeapon(),
-					 new EnemyNode(new ET (new Posn (randX,randY),
-							       "left",0,5),
-						       new EnemyNode(new ET (new Posn (randX2, randY2),
-									     "left",0,4),
-								     new noEnemy())),
+					 new EnemyNode(new ET (new Posn (randX+50,randY+50),
+							       "left",0,5), new noEnemy()),
 					 Stage1Platforms,
 					 new Background("Stage1")),
 			       "Test Hit Detection - Enemy 2 Hit");
@@ -2439,8 +2383,47 @@ class AdventureTest{
 					 Stage1Platforms,
 					 new Background("Stage1")),
 			       "Test Hit Detection - Player Hit");
-      } else if (Math.abs(randX-randX3) < 15 && Math.abs(randY-randY3) < 20){
-	passed = t.checkExpect(new Game2(new Player (new Posn (randX,randY),"right",0,0,0,25),
+      } else if (Math.abs(randWX-randX4) < 15 && Math.abs(randWY-randY4) < 20){
+	passed = t.checkExpect(new Game2(new Player (new Posn (randX4,randY4),"right",0,0,0,5),
+					 new WeaponNode(
+					     new Weapon(false,
+							new Posn(randX, randY),
+							new Posn(0, 0),
+							"ET",
+							"left"),
+					     new WeaponNode(
+						 new Weapon(false,
+							    new Posn(randX2, randY2),
+							    new Posn(0, 0),
+							    "ET",
+							    "left"),
+						 new WeaponNode(
+						     new Weapon(false,
+								new Posn(randWX,randWY),
+								new Posn (0,0),
+								"ET","left"), new noWeapon()))),
+					     new noEnemy(),
+					     Stage1Platforms,
+					     new Background("Stage1")).hit(),
+			       new Game2(new Player (new Posn (randX4,randY4),"right",0,0,0,4),
+					 new WeaponNode(
+					     new Weapon(false,
+							new Posn(randX, randY),
+							new Posn(0, 0),
+							"ET",
+							"left"),
+					     new WeaponNode(
+						 new Weapon(false,
+							    new Posn(randX2, randY2),
+							    new Posn(0, 0),
+							    "ET",
+							    "left"), new noWeapon())),
+					 new noEnemy(),
+					 Stage1Platforms,
+					 new Background("Stage1")),
+			       "Test Hit Detection - Player Hit");
+      } else if (Math.abs(randWX-randX5) < 15 && Math.abs(randWY-randY5) < 20){
+	passed = t.checkExpect(new Game2(new Player (new Posn (randX5,randY5),"right",0,0,0,25),
 					 new noWeapon(),
 					 new EnemyNode(new ET (new Posn (randX3,randY3),
 							       "left",0,5),
@@ -2449,7 +2432,7 @@ class AdventureTest{
 								     new noEnemy())),
 					 Stage1Platforms,
 					 new Background("Stage1")).hit(),
-			       new Game2(new Player (new Posn (randX-10,randY-10),"right",0,0,0,24),
+			       new Game2(new Player (new Posn (randX5-10,randY5-10),"right",0,0,0,24),
 					 new noWeapon(),
 					 new EnemyNode(new ET (new Posn (randX3,randY3),
 							       "left",0,5),
@@ -2464,18 +2447,14 @@ class AdventureTest{
 					 new noWeapon(),
 					 new EnemyNode(new ET (new Posn (randWX,randWY),
 							       "left",0,5),
-						       new EnemyNode(new ET (new Posn (450, 190),
-									     "left",0,5),
-								     new noEnemy())),
+						       new noEnemy()),
 					 Stage1Platforms,
 					 new Background("Stage1")).hit(),
 			       new Game2(new Player (new Posn (randX,randY),"right",0,0,0,25),
 					 new noWeapon(),
 					 new EnemyNode(new ET (new Posn (randWX,randWY),
 							       "left",0,5),
-						       new EnemyNode(new ET (new Posn (450, 190),
-									     "left",0,5),
-								     new noEnemy())),
+						       new noEnemy()),
 					 Stage1Platforms,
 					 new Background("Stage1")),
 			       "Test Hit Detection - No Contact");
@@ -2917,7 +2896,6 @@ class AdventureTest{
     }
     return passed;
   }
-  /*
   boolean testRandomOnTick(Tester t){
     
     String[] stringArray;
@@ -3081,7 +3059,7 @@ class AdventureTest{
       }     
     }
     return passed;
-  }*/
+  }
   public static void main(String[] args){
     AdventureTest testAll = new AdventureTest();
     Tester.runReport(testAll, false, false);
