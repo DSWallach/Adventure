@@ -189,28 +189,22 @@ class EnemyNode implements LoE{
 					  this.e.health()),
 			     this.n);
       } 
-    } else if(this.e==enemy){
-      if (this.getEnemy().shooting() > 0) {
-	if (this.e.shooting() > 20){
-	  return new EnemyNode(new ET(this.e.center(),
-				      dir,
-				      0,
-				      this.e.health()),
-			       this.n.attack(enemy, dir));
-	  } else {
-	  return new EnemyNode(new ET(this.e.center(),
-				      dir,
-				      this.e.shooting()+1,
-				      this.e.health()),
-			       this.n.attack(enemy, dir));
-	}
+    } else if(enemy.type().equals("ET") && this.e==enemy){
+      if (this.e.shooting() > 20){
+	return new EnemyNode(new ET(this.e.center(),
+				    dir,
+				    0,
+				    this.e.health()),
+			     this.n.attack(enemy, dir));
+      } else {
+	return new EnemyNode(new ET(this.e.center(),
+				    dir,
+				    this.e.shooting()+1,
+				    this.e.health()),
+			     this.n.attack(enemy, dir));
       }
-    }
-    return new EnemyNode(new ET(this.e.center(),
-				this.e.facing(),
-				15,
-				this.e.health()), this.n.attack(enemy, dir));
-      
+    } 
+    return new EnemyNode(this.e, this.n.attack(enemy, dir));
   }
  
   public WorldImage listDraw(WorldImage base){
@@ -254,22 +248,33 @@ class JMin implements Enemy {
   }
   public Enemy move(String dir){
     if (this.shooting==11){
-      return new JMin(this.center,
-		      this.facing,
-		      0,
-		      this.health).move(dir);
-    } else if (dir.equals("right")){
-      return new JMin(new Posn (this.center.x + 10, this.center.y),
-		      "right",
-		      this.shooting+1,
-		      this.health);
-    } else if (dir.equals("left")){
-      return new JMin(new Posn (this.center.x - 10, this.center.y),
-		      "left",
-		      this.shooting+1,
-		      this.health);
+      if (dir.equals("right")){
+	return new JMin(new Posn (this.center.x + 10, this.center.y),
+			"right",
+			0,
+			this.health);
+      } else if (dir.equals("left")){
+	return new JMin(new Posn (this.center.x - 10, this.center.y),
+			"left",
+			0,
+			this.health);
+      } else {
+	return this;
+      }
     } else {
-      return this;
+      if (dir.equals("right")){
+	return new JMin(new Posn (this.center.x + 10, this.center.y),
+			"right",
+			this.shooting+1,
+			this.health);
+      } else if (dir.equals("left")){
+	return new JMin(new Posn (this.center.x - 10, this.center.y),
+			"left",
+			this.shooting+1,
+			this.health);
+      } else {
+	return this;
+      }
     }
   }
   public int health(){
@@ -403,7 +408,7 @@ class DrRacket implements Enemy {
 			  this.facing,
 			  this.shooting,
 			  this.health);
-} else if (dir.equals("down") && this.center.y < 225){
+    } else if (dir.equals("down") && this.center.y < 225){
       return new DrRacket(new Posn(this.center.x, this.center.y+dif),
 			  this.floating,
 			  this.facing,
@@ -489,7 +494,7 @@ class J implements Enemy {
       return new J(new Posn(this.center.x, this.center.y-5),
 			  this.floating,
 			  this.facing,
-			  this.shooting,
+			  this.shooting+1,
 			  this.health);
     } else if (dir.equals("down") && this.center.y < 182){
       return new J(new Posn(this.center.x, this.center.y+5),
@@ -1417,26 +1422,26 @@ class Game2 extends World {
     }
   }
   
-  public Game2 RacketAI(){
+  public Game2 RacketAI(int rand){
     LoE currEnemy = this.loe;
     Posn eLoc = currEnemy.enemyLoc();
     Posn pLoc = this.player.center;
-    Random newRandom = new Random();
-    int rand = newRandom.nextInt(100);
     for(int i = 0; i<this.loe.num();i++){
       if(currEnemy.getEnemy().type().equals("DrRacket")){
-	if (currEnemy.getEnemy().shooting()<1 && rand < 50 ){
-	  return new Game2(this.player,
-			   this.low,
-			   this.loe.setEnemy(currEnemy.getEnemy().move("float")),
-			   this.lop,
-			   this.back).LoWClean();
-	} else if (currEnemy.getEnemy().shooting()<1){
-	  return new Game2(this.player,
-			   this.low,
-			   this.loe.setEnemy(currEnemy.getEnemy().move("land")),
-			   this.lop,
-			   this.back);    
+	if (currEnemy.getEnemy().shooting()<1){
+	  if(rand < 50 ){
+	    return new Game2(this.player,
+			     this.low,
+			     this.loe.setEnemy(currEnemy.getEnemy().move("float")),
+			     this.lop,
+			     this.back);
+	  } else {
+	    return new Game2(this.player,
+			     this.low,
+			     this.loe.setEnemy(currEnemy.getEnemy().move("land")),
+			     this.lop,
+			     this.back);
+	  }
 	} else if (currEnemy.getEnemy().floating()){
 	  if (currEnemy.getEnemy().center().y>this.player.center.y-100){
 	    return new Game2(this.player,
@@ -1444,60 +1449,60 @@ class Game2 extends World {
 			     this.loe.setEnemy(currEnemy.getEnemy().move("up")),
 			     this.lop,
 			     this.back);
-	  } else {
-	    if (currEnemy.getEnemy().center().x>pLoc.x &&
-		(currEnemy.getEnemy().shooting() % 2 == 0)){
+	  } else if (currEnemy.getEnemy().shooting() % 2 == 0){
+	    if (currEnemy.getEnemy().center().x>pLoc.x ){
 	      return new Game2(this.player,
 			       this.low.eShoot(eLoc,"left","Fireball"),
 			       this.loe.attack(currEnemy.getEnemy(),
 					       "left"),
 			       this.lop,
 			       this.back);
-	    } else if (currEnemy.getEnemy().shooting() % 2 == 0) {
+	    } else {
 	      return new Game2(this.player,
 			       this.low.eShoot(eLoc,"right","Fireball"),
 			       this.loe.attack(currEnemy.getEnemy(),
 					       "right"),
 			       this.lop,
 			       this.back);
-	    } else {
-	      return new Game2(this.player,
-			       this.low,
-			       this.loe.attack(currEnemy.getEnemy(),
-					       currEnemy.getEnemy().facing()),
-			       this.lop,
-			       this.back);
 	    }
+	  } else {
+	    return new Game2(this.player,
+			     this.low,
+			     this.loe.attack(currEnemy.getEnemy(),
+					     currEnemy.getEnemy().facing()),
+			     this.lop,
+			     this.back);
 	  }
 	} else {
-	  if (currEnemy.getEnemy().center().y<this.player.center.y-25){
+	  if (currEnemy.getEnemy().center().y<this.player.center.y-10){
 	    return new Game2(this.player,
 			     this.low,
 			     this.loe.setEnemy(currEnemy.getEnemy().move("down")),
 			     this.lop,
 			     this.back);
-	  } else if (currEnemy.getEnemy().center().y>this.player.center.y){
+	  } else if (currEnemy.getEnemy().center().y>this.player.center.y+10){
 	    return new Game2(this.player,
 			     this.low,
 			     this.loe.setEnemy(currEnemy.getEnemy().move("up")),
 			     this.lop,
 			     this.back);
 	  } else {
-	    if (currEnemy.getEnemy().center().x>pLoc.x &&
-		(currEnemy.getEnemy().shooting() % 2 == 0)){
+	    if(currEnemy.getEnemy().shooting() % 2 == 0){
+	      if (currEnemy.getEnemy().center().x>pLoc.x){
 	      return new Game2(this.player,
 			       this.low.eShoot(eLoc,"left","Lambda"),
 			       this.loe.attack(currEnemy.getEnemy(),
 					       "left"),
 			       this.lop,
 			       this.back);
-	    } else if (currEnemy.getEnemy().shooting() % 2 == 0) {
+	      } else {
 	      return new Game2(this.player,
 			       this.low.eShoot(eLoc,"right","Lambda"),
 			       this.loe.attack(currEnemy.getEnemy(),
 					       "right"),
 			       this.lop,
 			       this.back);
+	      }
 	    } else {
 	      return new Game2(this.player,
 			       this.low,
@@ -1514,17 +1519,14 @@ class Game2 extends World {
     }
     return this;
   }
-  public Game2 JAI(){    
+  public Game2 JAI(int rand){    
       
     Enemy currEnemy = this.loe.getEnemy();
     LoE listEnemy = this.loe;
     Posn eLoc = this.loe.enemyLoc();
     Posn pLoc = this.player.center;
-    Random newRandom = new Random();
-    int rand = newRandom.nextInt(100);
-    
-    for (int i = 0; i<this.loe.num();i++){
-      if (this.loe.getEnemy().type().equals("J")){
+    for(int i = 0; i<this.loe.num();i++){
+      if (listEnemy.getEnemy().type().equals("J")){
 	if (currEnemy.shooting()==75 && currEnemy.center().x > 550){
 	  return new Game2 (this.player,
 			    this.low,
@@ -1601,7 +1603,7 @@ class Game2 extends World {
 	    return new Game2(this.player,
 			     this.low.eShoot(eLoc, pLoc, "left","Racketball"),
 			     this.loe.setEnemy(new J(currEnemy.center(),
-						     false,
+						     currEnemy.floating(),
 						     currEnemy.facing(),
 						     currEnemy.shooting()+1,
 						     currEnemy.health())),
@@ -1630,31 +1632,33 @@ class Game2 extends World {
     Posn eLoc = currEnemy.enemyLoc();
     Posn pLoc = this.player.center;
     for (int i = 0; i<this.loe.num();i++){
+      Random newRandom = new Random();
+      int rand = newRandom.nextInt(100);
       if (currEnemy.getEnemy().type().equals("DrRacket")){
-	return this.RacketAI();
+	return this.RacketAI(rand);
       } else if (currEnemy.getEnemy().type().equals("J")){
-	return this.JAI();
+	return this.JAI(rand);
       } else if (currEnemy.getEnemy().type().equals("JMin")){
 	if(eLoc.x < 100 && currEnemy.getEnemy().facing().equals("left")){
 	  return new Game2(this.player,
 			   this.low,
 			   this.loe.setEnemy(currEnemy.getEnemy().move("right")),
 			   this.lop,
-			   this.back);
+			   this.back);//.JAI(rand);
 	} else if (eLoc.x > 650 && currEnemy.getEnemy().facing().equals("right")){
-	  	  return new Game2(this.player,
+	  return new Game2(this.player,
 			   this.low,
 			   this.loe.setEnemy(currEnemy.getEnemy().move("left")),
-				   this.lop,
-				   this.back);
+			   this.lop,
+			   this.back);//.JAI(rand);
 	} else {
 	  return new Game2(this.player,
 			   this.low,
 			   this.loe.setEnemy(currEnemy.getEnemy().move(currEnemy.getEnemy().facing())),
 			   this.lop,
-			   this.back);
+			   this.back);//.JAI(rand);
 	}
-	      } else {
+      } else {
 	if (Math.abs(pLoc.y - eLoc.y)<50){
 	  if (0 < (pLoc.x - eLoc.x) &&
 	      (pLoc.x - eLoc.x) < 160){
@@ -1834,7 +1838,16 @@ class Game2 extends World {
 // Defines the initial setup of the game world and begins the game
 public static void main(String args[]){
     
-  Game2 Stage1 = new Game2(new Player (new Posn (40,127),"right",0,0,0,25),
+  Game2 Stage1 = new Game2(new Player (new Posn (10,158),"right",0,0,0,25),
+			     new noWeapon(),
+			     new EnemyNode(new J(new Posn(550,75),
+							false,
+							"left",
+							0,
+							50), new noEnemy()),
+			     StageJPlatforms,
+			     new Background("StageJ"));
+    /*new Game2(new Player (new Posn (40,127),"right",0,0,0,25),
 			   new noWeapon(),
 			   new EnemyNode(new ET (new Posn (450,190),
 						 "left",0,5),
@@ -1843,7 +1856,7 @@ public static void main(String args[]){
 						       new noEnemy())),
 			   Stage1Platforms,
 			   new Background("Stage1"));
-    
+    */
     
       Stage1.bigBang(width, height, 0.05);
     }
@@ -2003,7 +2016,7 @@ class AdventureTest{
 			   StageJPlatforms,
 			   new Background("StageJ"));
   Player StartingPlayer = new Player (new Posn (40,132),"right",0,0,0,25);
-
+  
   boolean testPlayer(Tester t){
     String[] stringArray;
     stringArray = new String[5];
@@ -2894,7 +2907,7 @@ class AdventureTest{
     }
     return passed;
   }
-  /*
+  
   boolean testRandomOnTick(Tester t){
     
     String[] stringArray;
@@ -2911,7 +2924,7 @@ class AdventureTest{
     for (int j = 0; j < 50; j++){
       
       Random randomStage = new Random();
-      int randStage = randomStage.nextInt(6);
+      int randStage = randomStage.nextInt(3);
       Random randomX = new Random();
       int randX = randomX.nextInt(701);
       Random randomY = new Random();
@@ -2964,29 +2977,6 @@ class AdventureTest{
 	  }				 
 	}
       } else if (randStage == 2){
-	currGame = StageR;
-	for (int i = 0; i < 50; i++){
-	  
-	  Random randomInput = new Random();
-	  int randInput = randomInput.nextInt(5);
-	  String input = stringArray[randInput];
-	  Random randomInt = new Random();
-	  int randInt = randomX.nextInt(2);
-	  prevGame = currGame;
-	  
-	  if (randInt==0){
-	    currGame = (Game2)currGame.onTick();
-	    passed = t.checkExpect(prevGame.onTick(),
-				   currGame,
-				   "Test onTick - StageR on tick " + i);
-	  } else {
-	    currGame = (Game2)currGame.onKeyEvent(input);
-	    passed = t.checkExpect(prevGame.onKeyEvent(input),
-				   currGame,
-				   "Test onTick - StageR on key event " + i);
-	  }				 
-	}
-      } else if (randStage == 3){
 	currGame = Stage3;
 	for (int i = 0; i < 50; i++){
 	  
@@ -3009,7 +2999,7 @@ class AdventureTest{
 				   "Test onTick - Stage3 on key event " + i);
 	  }				 
 	}
-      } else if (randStage == 4){
+      } else {
 	currGame = Stage4;
 	for (int i = 0; i < 50; i++){
 	  
@@ -3032,33 +3022,807 @@ class AdventureTest{
 				   "Test onTick - Stage4 on key event " + i);
 	  }				 
 	}
-      } else {
-	currGame = StageJ;
-	for (int i = 0; i < 50; i++){
-	  
-	  Random randomInput = new Random();
-	  int randInput = randomInput.nextInt(5);
-	  String input = stringArray[randInput];
-	  Random randomInt = new Random();
-	  int randInt = randomX.nextInt(2);
-	  prevGame = currGame;
-	  
-	  if (randInt==0){
-	    currGame = (Game2)currGame.onTick();
-	    passed = t.checkExpect(prevGame.onTick(),
-				   currGame,
-				   "Test onTick - StageJ on tick " + i);
-	  } else {
-	    currGame = (Game2)currGame.onKeyEvent(input);
-	    passed = t.checkExpect(prevGame.onKeyEvent(input),
-				   currGame,
-				   "Test onTick - StageJ on key event " + i);
-	  }				 
-	}
       }     
     }
     return passed;
-  }*/
+  }
+  boolean testEnemyAI(Tester t){
+    String dir = "dir";
+    int dist = 0;
+    int loop = 0;
+    boolean passed = false;
+    
+    for(int i = 0; i<500;i++){
+      Random randomX = new Random();
+      int randX = randomX.nextInt(701);
+      Random randomY = new Random();
+      int randY = randomY.nextInt(251);
+      Random randomPX = new Random();
+      int randPX = randomPX.nextInt(701);
+      Random randomPY = new Random();
+      int randPY = randomPY.nextInt(251);
+      Random randT = new Random();
+      int tring = randT.nextInt(2);
+      Random randE = new Random();
+      int enemy = randE.nextInt(2);
+      Random randA = new Random();
+      int attack = randA.nextInt(3);
+      Random randS = new Random();
+      int shooting = randS.nextInt(12);
+      	if (tring==0){
+	  dir = "right";
+	  dist = -10;
+	} else {
+	  dir = "left";
+	  dist = 10;
+	}
+	
+      if(enemy==0){
+
+	if (shooting<11){
+	  loop = 1;
+	} else {
+	  loop = -shooting;
+	}
+	if (randX < 100 && dir.equals("left")){
+	  t.checkExpect(new Game2(new Player (new Posn (0,0),"left",0,0,0,25),
+				  new noWeapon(),
+				  new EnemyNode(new JMin(new Posn(randX, randY),
+							 dir,
+							 shooting,
+							 5),
+						new noEnemy()),
+				  new noPlatform(),
+				  new Background("StageJ")).AI(),
+			new Game2(new Player (new Posn (0,0),"left",0,0,0,25),
+				  new noWeapon(),
+				  new EnemyNode(new JMin(new Posn(randX+10, randY),
+							 "right",
+							 shooting+loop,
+							 5),
+						new noEnemy()),
+				  new noPlatform(),
+				  new Background("StageJ")),
+			"Test AI() - JMin - Turn right");		   
+	} else if (randX > 650 && dir.equals("right")){
+	  t.checkExpect(new Game2(new Player (new Posn (0,0),"left",0,0,0,25),
+				  new noWeapon(),
+				  new EnemyNode(new JMin(new Posn(randX, randY),
+							 dir,
+							 shooting,
+							 5),
+						new noEnemy()),
+				  new noPlatform(),
+				  new Background("StageJ")).AI(),
+			new Game2(new Player (new Posn (0,0),"left",0,0,0,25),
+				  new noWeapon(),
+				  new EnemyNode(new JMin(new Posn(randX-10, randY),
+							 "left",
+							 shooting+loop,
+							 5),
+						new noEnemy()),
+				  new noPlatform(),
+				  new Background("StageJ")),
+			"Test AI() - JMin - Turn left");		   
+	} else {
+	  t.checkExpect(new Game2(new Player (new Posn (0,0),"left",0,0,0,25),
+				  new noWeapon(),
+				  new EnemyNode(new JMin(new Posn(randX, randY),
+							 dir,
+							 shooting,
+							 5),
+						new noEnemy()),
+				  new noPlatform(),
+				  new Background("StageJ")).AI(),
+			new Game2(new Player (new Posn (0,0),"left",0,0,0,25),
+				  new noWeapon(),
+				  new EnemyNode(new JMin(new Posn(randX-dist, randY),
+							 dir,
+							 shooting+loop,
+							 5),
+						new noEnemy()),
+				  new noPlatform(),
+				  new Background("StageJ")),
+			"Test AI() - JMin - Keep going");	
+	}
+      } else {
+	if (shooting<20){
+	  loop = 1;
+	} else {
+	  loop = -shooting;
+	}
+	if(Math.abs(randY - randPY) < 50){
+	  if( 0 < (randPX - randX) && (randPX - randX) < 160){
+	    if(shooting == 0){
+	      t.checkExpect(new Game2(new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				      new noWeapon(),
+				      new EnemyNode(new ET(new Posn(randX, randY),
+							     dir,
+							     shooting,
+							     5),
+						    new noEnemy()),
+				      new noPlatform(),
+				      new Background("Stage4")).AI(),
+			    new Game2(new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				      new WeaponNode(new Weapon(false,
+								new Posn(randX+5,randY+7),
+								new Posn(0,0),
+								"ET",
+								"right"),
+						     new noWeapon()),
+				      new EnemyNode(new ET(new Posn(randX, randY),
+							   "right",
+							   shooting+loop,
+							   5),
+						    new noEnemy()),
+				      new noPlatform(),
+				      new Background("Stage4")),
+			    "Test AI() - ET - Shoot Right");
+	    } else {
+	      t.checkExpect(new Game2(new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				      new noWeapon(),
+				      new EnemyNode(new ET(new Posn(randX, randY),
+							   dir,
+							   shooting,
+							   5),
+						    new noEnemy()),
+				      new noPlatform(),
+				      new Background("Stage4")).AI(),
+			    new Game2(new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				      new noWeapon(),
+				      new EnemyNode(new ET(new Posn(randX, randY),
+							   "right",
+							   shooting+loop,
+							   5),
+						    new noEnemy()),
+				      new noPlatform(),
+				      new Background("Stage4")),
+			    "Test AI() - ET - Wait to shoot right");
+	    }
+	  } else if(-160 < (randPX - randX) && (randPX - randX) < 0){
+	    if (shooting == 0) { 
+	      t.checkExpect(new Game2(new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				      new noWeapon(),
+				      new EnemyNode(new ET(new Posn(randX, randY),
+							   dir,
+							   shooting,
+							   5),
+						    new noEnemy()),
+				      new noPlatform(),
+				      new Background("Stage4")).AI(),
+			    new Game2(new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				      new WeaponNode(new Weapon(false,
+								new Posn(randX-5,randY+7),
+								new Posn(0, 0),
+								"ET",
+								"left"),
+						     new noWeapon()),
+				      new EnemyNode(new ET(new Posn(randX, randY),
+							   "left",
+							   shooting+loop,
+							   5),
+						    new noEnemy()),
+				      new noPlatform(),
+				      new Background("Stage4")),
+			    "Test AI() - ET - Shoot Left");
+	    } else {
+	      t.checkExpect(new Game2(new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				      new noWeapon(),
+				      new EnemyNode(new ET(new Posn(randX, randY),
+							   dir,
+							   shooting,
+							   5),
+						    new noEnemy()),
+				      new noPlatform(),
+				      new Background("Stage4")).AI(),
+			    new Game2(new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				      new noWeapon(),
+				      new EnemyNode(new ET(new Posn(randX, randY),
+							   "left",
+							   shooting+loop,
+							   5),
+						    new noEnemy()),
+				      new noPlatform(),
+				      new Background("Stage4")),
+			    "Test AI() - ET - Wait to shoot left");
+	    }
+	  } else {
+	    t.checkExpect(new Game2(new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				    new noWeapon(),
+				    new EnemyNode(new ET(new Posn(randX, randY),
+							 dir,
+							 shooting,
+							 5),
+						  new noEnemy()),
+				    new noPlatform(),
+				    new Background("Stage4")).AI(),
+			  new Game2(new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				    new noWeapon(),
+				    new EnemyNode(new ET(new Posn(randX, randY),
+							 dir,
+							 shooting,
+							 5),
+						  new noEnemy()),
+				    new noPlatform(),
+				    new Background("Stage4")),
+			  "Test AI() - ET - Don't shoot");
+	  }
+	} else {
+	  t.checkExpect(new Game2(new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				  new noWeapon(),
+				  new EnemyNode(new ET(new Posn(randX, randY),
+						       dir,
+						       shooting,
+						       5),
+						new noEnemy()),
+				  new noPlatform(),
+				  new Background("Stage4")).AI(),
+			new Game2(new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				  new noWeapon(),
+				  new EnemyNode(new ET(new Posn(randX, randY),
+						       dir,
+						       shooting,
+						       5),
+						new noEnemy()),
+				  new noPlatform(),
+				  new Background("Stage4")),
+			"Test AI() - ET - Don't shoot");
+	}
+      }
+      }
+      return passed;
+      }
+  boolean testJAI(Tester t){
+    boolean passed = false;
+    boolean floating = false;
+    String dir = "none";
+    for(int i=0; i<500; i++){
+      Random random = new Random();
+      int rand = random.nextInt(701);
+      Random randomPX = new Random();
+      int randPX = randomPX.nextInt(701);
+      Random randomPY = new Random();
+      int randPY = randomPY.nextInt(251);
+      Random randomF = new Random();
+      int randF = randomF.nextInt(2);
+      Random randomX = new Random();
+      int randX = randomX.nextInt(701);
+      Random randomY = new Random();
+      int randY = randomY.nextInt(251);
+      Random randomS= new Random();
+      Random randT = new Random();
+      int tring = randT.nextInt(2);
+      int shooting = randomS.nextInt(76);
+
+      if(randF < 1){
+	floating = true;
+      } else {
+	floating = false;
+      }
+      if (tring==0){
+	dir = "right";
+      } else {
+	dir = "left";
+      }
+      if(shooting > 60){
+	shooting = 75;
+      } else if (shooting < 15){
+	shooting = 0;
+      }
+      if(shooting==75 && randX > 550){
+	t.checkExpect(new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				 new noWeapon(),
+				 new EnemyNode(new J(new Posn(randX, randY),
+						     floating,
+						     dir,
+						     shooting,
+						     50),
+					       new noEnemy()),
+				 StageJPlatforms,
+				 new Background("StageJ")).JAI(rand),
+		      new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				 new noWeapon(),
+				 new EnemyNode(new J(new Posn(randX, randY),
+						     floating,
+						     dir,
+						     0,
+						     50),
+					       new noEnemy()),
+				 StageJPlatforms,
+				 new Background("StageJ")),
+		      "Test JAI() - Reset Shooting Counter");
+      } else if (randX < 100 || shooting==75){
+	t.checkExpect(new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				 new noWeapon(),
+				 new EnemyNode(new J(new Posn(randX, randY),
+						     floating,
+						     dir,
+						     shooting,
+						     50),
+					       new noEnemy()),
+				 StageJPlatforms,
+				 new Background("StageJ")).JAI(rand),
+		      new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				 new noWeapon(),
+				 new EnemyNode(new J(new Posn(randX+5, randY),
+						     floating,
+						     dir,
+						     75,
+						     50),
+					       new noEnemy()),
+				 StageJPlatforms,
+				 new Background("StageJ")),
+		      "Test JAI() - Stop shooting move back to reset");
+      } else if (shooting<1){
+	if(rand < 20){
+	  t.checkExpect(new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				   new noWeapon(),
+				   new EnemyNode(new J(new Posn(randX, randY),
+						       floating,
+						       dir,
+						       shooting,
+						       50),
+						 new noEnemy()),
+				   StageJPlatforms,
+				   new Background("StageJ")).JAI(rand),
+			new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				   new noWeapon(),
+				   new EnemyNode(new JMin(new Posn(680,179),
+							  "left",
+							  0,
+							  2),
+						 new EnemyNode(new J(new Posn(randX, randY),
+								     floating,
+								     dir,
+								     75,
+								     50),
+							       new noEnemy())),
+				   StageJPlatforms,
+				   new Background("StageJ")),
+			"Test JAI() - Summon JMin");
+	} else if (rand < 60) {
+	  t.checkExpect(new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				   new noWeapon(),
+				   new EnemyNode(new J(new Posn(randX, randY),
+						       floating,
+						       dir,
+						       shooting,
+						       50),
+						 new noEnemy()),
+				   StageJPlatforms,
+				   new Background("StageJ")).JAI(rand),
+			new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				   new noWeapon(),
+				   new EnemyNode(new J(new Posn(randX, randY),
+								     true,
+								     dir,
+								     shooting+1,
+								     50),
+							       new noEnemy()),
+				   StageJPlatforms,
+				   new Background("StageJ")),
+			"Test JAI() - Prepare for JBall Attack");
+	} else {
+	  t.checkExpect(new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				   new noWeapon(),
+				   new EnemyNode(new J(new Posn(randX, randY),
+						       floating,
+						       dir,
+						       shooting,
+						       50),
+						 new noEnemy()),
+				   StageJPlatforms,
+				   new Background("StageJ")).JAI(rand),
+			new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				   new noWeapon(),
+				   new EnemyNode(new J(new Posn(randX, randY),
+								     false,
+								     dir,
+								     shooting+1,
+								     50),
+							       new noEnemy()),
+				   StageJPlatforms,
+				   new Background("StageJ")),
+			"Test JAI() - Prepare for RacketBall attack");
+	}	  
+      } else if (floating) {
+	if(shooting % 2 == 0){
+	  t.checkExpect(new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				   new noWeapon(),
+				   new EnemyNode(new J(new Posn(randX, randY),
+						       floating,
+						       dir,
+						       shooting,
+						       50),
+						 new noEnemy()),
+				   StageJPlatforms,
+				   new Background("StageJ")).JAI(rand),
+			new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				   new noWeapon().eShoot(new Posn(randX, randY),"left","Jball"),
+				   new EnemyNode(new J(new Posn(randX, randY),
+						       floating,
+						       dir,
+						       shooting,
+						       50).move("left"),
+						 new noEnemy()),
+				   StageJPlatforms,
+				   new Background("StageJ")),
+			"Test JAI() - Shoot JBall");
+	} else {
+	  	  t.checkExpect(new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				   new noWeapon(),
+				   new EnemyNode(new J(new Posn(randX, randY),
+						       floating,
+						       dir,
+						       shooting,
+						       50),
+						 new noEnemy()),
+				   StageJPlatforms,
+				   new Background("StageJ")).JAI(rand),
+			new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				   new noWeapon(),
+				   new EnemyNode(new J(new Posn(randX, randY),
+						       floating,
+						       dir,
+						       shooting,
+						       50).move(dir),
+						 new noEnemy()),
+				   StageJPlatforms,
+				   new Background("StageJ")),
+			"Test JAI() - Wait to shoot JBall");
+	}
+      } else {
+	if (shooting % 10 ==0){
+	  t.checkExpect(new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				   new noWeapon(),
+				   new EnemyNode(new J(new Posn(randX, randY),
+						       floating,
+						       dir,
+						       shooting,
+						       50),
+						 new noEnemy()),
+				   StageJPlatforms,
+				   new Background("StageJ")).JAI(rand),
+			new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				   new noWeapon().eShoot(new Posn(randX, randY),
+							 new Posn (randPX,randPY),
+							 "left","Racketball"),
+				   new EnemyNode(new J(new Posn(randX, randY),
+						       floating,
+						       dir,
+						       shooting+1,
+						       50),
+						 new noEnemy()),
+				   StageJPlatforms,
+				   new Background("StageJ")),
+			"Test JAI() - Shoot RacketBall");
+	} else {
+	  t.checkExpect(new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				   new noWeapon(),
+				   new EnemyNode(new J(new Posn(randX, randY),
+						       floating,
+						       dir,
+						       shooting,
+						       50),
+						 new noEnemy()),
+				   StageJPlatforms,
+				   new Background("StageJ")).JAI(rand),
+			new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				   new noWeapon(),
+				   new EnemyNode(new J(new Posn(randX, randY),
+						       floating,
+						       dir,
+						       shooting+1,
+						       50),
+						 new noEnemy()),
+				   StageJPlatforms,
+				   new Background("StageJ")),
+			"Test JAI() - Wait to shoot RacketBall");
+	}
+      }
+    }
+    return passed;
+  }
+  boolean testRacketAI(Tester t){
+    boolean passed = false;
+    boolean floating = false;
+    String dir = "none";
+    int num = 0;
+    for(int i=0; i<500; i++){
+      Random random = new Random();
+      int rand = random.nextInt(701);
+      Random randomPX = new Random();
+      int randPX = randomPX.nextInt(701);
+      Random randomPY = new Random();
+      int randPY = randomPY.nextInt(251);
+      Random randomF = new Random();
+      int randF = randomF.nextInt(2);
+      Random randomX = new Random();
+      int randX = randomX.nextInt(701);
+      Random randomY = new Random();
+      int randY = randomY.nextInt(251);
+      Random randomS= new Random();
+      Random randT = new Random();
+      int tring = randT.nextInt(2);
+      int shooting = randomS.nextInt(11);
+      
+
+      if(randF < 1){
+	floating = true;
+      } else {
+	floating = false;
+      }
+      if (tring==0){
+	dir = "right";
+      } else {
+	dir = "left";
+      }
+      if(shooting < 10){
+	num = 1;
+      } else {
+	num = -10;
+      }
+	
+      if (shooting<1){
+	if(rand<50){
+	  t.checkExpect(new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				   new noWeapon(),
+				   new EnemyNode(new DrRacket(new Posn(randX, randY),
+							      floating,
+							      dir,
+							      shooting,
+							      50),
+						 new noEnemy()),
+				   StageRPlatforms,
+				   new Background("StageR")).RacketAI(rand),
+			new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				   new noWeapon(),
+				   new EnemyNode(new DrRacket(new Posn(randX, randY),
+							      floating,
+							      dir,
+							      shooting,
+							      50).move("float"),
+						 new noEnemy()),
+				   StageRPlatforms,
+				   new Background("StageR")),
+			"Test RacketAI() - Float into the air");
+	} else {
+	  t.checkExpect(new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				   new noWeapon(),
+				   new EnemyNode(new DrRacket(new Posn(randX, randY),
+							      floating,
+							      dir,
+							      shooting,
+							      50),
+						 new noEnemy()),
+				   StageRPlatforms,
+				   new Background("StageR")).RacketAI(rand),
+			new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				   new noWeapon(),
+				   new EnemyNode(new DrRacket(new Posn(randX, randY),
+							      floating,
+							      dir,
+							      shooting,
+							      50).move("land"),
+						 new noEnemy()),
+				   StageRPlatforms,
+				   new Background("StageR")),
+			"Test RacketAI() - Land on the ground");
+	}
+      } else if (floating){
+	if(randY > randPY - 100){
+	  t.checkExpect(new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				   new noWeapon(),
+				   new EnemyNode(new DrRacket(new Posn(randX, randY),
+							      floating,
+							      dir,
+							      shooting,
+							      50),
+						 new noEnemy()),
+				   StageRPlatforms,
+				   new Background("StageR")).RacketAI(rand),
+			new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				   new noWeapon(),
+				   new EnemyNode(new DrRacket(new Posn(randX, randY),
+							      floating,
+							      dir,
+							      shooting,
+							      50).move("up"),
+						 new noEnemy()),
+				   StageRPlatforms,
+				   new Background("StageR")),
+			"Test RacketAI() - Move up");
+	} else if (shooting % 2 == 0){
+	  if (randX>randPX){
+	    t.checkExpect(new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				   new noWeapon(),
+				   new EnemyNode(new DrRacket(new Posn(randX, randY),
+							      floating,
+							      dir,
+							      shooting,
+							      50),
+						 new noEnemy()),
+				   StageRPlatforms,
+				   new Background("StageR")).RacketAI(rand),
+			  new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				     new noWeapon().eShoot(new Posn (randX,randY),
+							   "left","Fireball"),
+				     new EnemyNode(new DrRacket(new Posn(randX, randY),
+								floating,
+								"left",
+								shooting+1,
+								50),
+						   new noEnemy()),
+				     StageRPlatforms,
+				     new Background("StageR")),
+			  "Test RacketAI() - Shoot FireBall left");
+	  } else {
+	    t.checkExpect(new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				     new noWeapon(),
+				     new EnemyNode(new DrRacket(new Posn(randX, randY),
+								floating,
+								dir,
+								shooting,
+								50),
+						   new noEnemy()),
+				     StageRPlatforms,
+				     new Background("StageR")).RacketAI(rand),
+			  new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				     new noWeapon().eShoot(new Posn (randX,randY),
+							   "right","Fireball"),
+				     new EnemyNode(new DrRacket(new Posn(randX, randY),
+								floating,
+								"right",
+								shooting+1,
+								50),
+						   new noEnemy()),
+				     StageRPlatforms,
+				     new Background("StageR")),
+			  "Test RacketAI() - Shoot FireBall right");
+	  }
+	} else {
+	   t.checkExpect(new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				     new noWeapon(),
+				     new EnemyNode(new DrRacket(new Posn(randX, randY),
+								floating,
+								dir,
+								shooting,
+								50),
+						   new noEnemy()),
+				     StageRPlatforms,
+				     new Background("StageR")).RacketAI(rand),
+			 new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				    new noWeapon(),
+				    new EnemyNode(new DrRacket(new Posn(randX, randY),
+							       floating,
+							       dir,
+							       shooting+1,
+							       50),
+						  new noEnemy()),
+				    StageRPlatforms,
+				    new Background("StageR")),
+			 "Test RacketAI() - Wait to Shoot FireBall");
+	}
+      } else if (randY < randPY - 10){
+	t.checkExpect(new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				 new noWeapon(),
+				 new EnemyNode(new DrRacket(new Posn(randX, randY),
+							    floating,
+							    dir,
+							    shooting,
+							    50),
+					       new noEnemy()),
+				 StageRPlatforms,
+				 new Background("StageR")).RacketAI(rand),
+		      new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				 new noWeapon(),
+				 new EnemyNode(new DrRacket(new Posn(randX, randY),
+							    floating,
+							    dir,
+							    shooting,
+							    50).move("down"),
+					       new noEnemy()),
+				 StageRPlatforms,
+				 new Background("StageR")),
+		      "Test RacketAI() - Move down");
+      } else if (randY > randPY + 10){
+	t.checkExpect(new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				 new noWeapon(),
+				 new EnemyNode(new DrRacket(new Posn(randX, randY),
+							    floating,
+							    dir,
+							    shooting,
+							    50),
+					       new noEnemy()),
+				 StageRPlatforms,
+				 new Background("StageR")).RacketAI(rand),
+		      new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				 new noWeapon(),
+				 new EnemyNode(new DrRacket(new Posn(randX, randY),
+							    floating,
+							    dir,
+							    shooting,
+							    50).move("up"),
+					       new noEnemy()),
+				 StageRPlatforms,
+				 new Background("StageR")),
+		      "Test RacketAI() - Move up");
+      } else {
+	if(shooting % 2 == 0){
+	  if (randX>randPX){
+	    t.checkExpect(new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				     new noWeapon(),
+				     new EnemyNode(new DrRacket(new Posn(randX, randY),
+								floating,
+								dir,
+								shooting,
+								50),
+						   new noEnemy()),
+				     StageRPlatforms,
+				     new Background("StageR")).RacketAI(rand),
+			  new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				     new noWeapon().eShoot(new Posn (randX,randY),
+							   "left","Lambda"),
+				     new EnemyNode(new DrRacket(new Posn(randX, randY),
+								floating,
+								"left",
+								shooting+1,
+								50),
+						   new noEnemy()),
+				     StageRPlatforms,
+				     new Background("StageR")),
+			  "Test RacketAI() - Shoot Lambda left");
+	  } else {
+	    t.checkExpect(new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				     new noWeapon(),
+				     new EnemyNode(new DrRacket(new Posn(randX, randY),
+								floating,
+								dir,
+								shooting,
+								50),
+						   new noEnemy()),
+				     StageRPlatforms,
+				     new Background("StageR")).RacketAI(rand),
+			  new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				     new noWeapon().eShoot(new Posn (randX,randY),
+							   "right","Lambda"),
+				     new EnemyNode(new DrRacket(new Posn(randX, randY),
+								floating,
+								"right",
+								shooting+1,
+								50),
+						   new noEnemy()),
+				     StageRPlatforms,
+				     new Background("StageR")),
+			  "Test RacketAI() - Shoot Lambda right");
+	  }
+	} else {
+	  t.checkExpect(new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				   new noWeapon(),
+				   new EnemyNode(new DrRacket(new Posn(randX, randY),
+							      floating,
+							      dir,
+							      shooting,
+							      50),
+						 new noEnemy()),
+				   StageRPlatforms,
+				   new Background("StageR")).RacketAI(rand),
+			new Game2 (new Player (new Posn (randPX,randPY),"left",0,0,0,25),
+				   new noWeapon(),
+				   new EnemyNode(new DrRacket(new Posn(randX, randY),
+							      floating,
+							      dir,
+							      shooting+1,
+							      50),
+						 new noEnemy()),
+				   StageRPlatforms,
+				   new Background("StageR")),
+			"Test RacketAI() - Wait to Shoot Lambda");
+	}
+      }
+    }
+    return passed;
+  }
   public static void main(String[] args){
     AdventureTest testAll = new AdventureTest();
     Tester.runReport(testAll, false, false);
